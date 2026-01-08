@@ -370,7 +370,7 @@ def generate_index(data):
 </body>
 </html>'''
 
-def generate_seido():
+def generate_seido(data):
     links_html = ""
     for link in LINKS:
         icon = ICONS.get(link.get("icon", "file"), ICONS["file"])
@@ -385,6 +385,20 @@ def generate_seido():
         </div>
         <svg class="link-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{ICONS["external"]}</svg>
       </a>'''
+    
+    # ニュースセクション
+    news_html = ""
+    news_items = data.get("news", [])
+    if news_items:
+        for item in news_items:
+            news_html += f'''
+        <a href="{item.get('link', '#')}" target="_blank" class="news-item">
+          <span class="news-date">{item.get('date', '')}</span>
+          <span class="news-title">{item.get('title', '')}</span>
+          <svg class="news-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{ICONS["arrow"]}</svg>
+        </a>'''
+    else:
+        news_html = '<div class="news-empty">新着情報はありません</div>'
     
     return f'''<!DOCTYPE html>
 <html lang="ja">
@@ -404,6 +418,71 @@ def generate_seido():
     .page-header p {{
       font-size: 1rem;
       color: var(--text-muted);
+    }}
+    .section-title {{
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }}
+    .section-title::after {{
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }}
+    .news-section {{
+      margin-bottom: 60px;
+    }}
+    .news-list {{
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      overflow: hidden;
+    }}
+    .news-item {{
+      display: grid;
+      grid-template-columns: 90px 1fr auto;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 24px;
+      text-decoration: none;
+      color: inherit;
+      border-bottom: 1px solid var(--border-light);
+      transition: background 0.2s;
+    }}
+    .news-item:last-child {{ border-bottom: none; }}
+    .news-item:hover {{ background: white; }}
+    .news-date {{
+      font-size: 0.75rem;
+      color: var(--text-light);
+      font-variant-numeric: tabular-nums;
+    }}
+    .news-title {{
+      font-size: 0.9rem;
+      font-weight: 450;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }}
+    .news-item:hover .news-title {{ color: var(--accent-1); }}
+    .news-arrow {{
+      color: var(--text-light);
+      transition: all 0.2s;
+    }}
+    .news-item:hover .news-arrow {{
+      color: var(--accent-1);
+      transform: translateX(3px);
+    }}
+    .news-empty {{
+      padding: 32px;
+      text-align: center;
+      color: var(--text-light);
     }}
     .link-list {{
       display: grid;
@@ -445,8 +524,16 @@ def generate_seido():
   <main>
     <div class="page-header">
       <h1>制度改正・法令情報</h1>
-      <p>産業保健に関する主要な情報源へのリンク集</p>
+      <p>産業保健に関する最新ニュースと主要な情報源</p>
     </div>
+    
+    <section class="news-section">
+      <div class="section-title">厚労省 新着情報（産業保健関連）</div>
+      <div class="news-list">{news_html}
+      </div>
+    </section>
+    
+    <div class="section-title">関連リンク</div>
     <div class="link-list">{links_html}
     </div>
   </main>
@@ -690,7 +777,7 @@ def main():
         f.write(generate_index(data))
     
     with open("seido.html", "w", encoding="utf-8") as f:
-        f.write(generate_seido())
+        f.write(generate_seido(data))
     
     with open("articles.html", "w", encoding="utf-8") as f:
         f.write(generate_articles(data))
