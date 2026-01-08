@@ -4,6 +4,23 @@ import re
 import urllib.request
 from datetime import datetime
 
+# RSSフィード
+RSS_FEEDS = [
+    {"name": "厚生労働省 新着情報", "url": "https://www.mhlw.go.jp/stf/news.rdf"},
+]
+
+# 産業保健関連キーワード（これらを含む記事を抽出）
+KEYWORDS = [
+    "安全衛生", "労働安全", "労働衛生", "産業保健", "産業医", "健康診断",
+    "ストレスチェック", "メンタルヘルス", "過重労働", "長時間労働",
+    "労災", "労働災害", "職業病", "化学物質", "有害物質", "じん肺",
+    "健康経営", "治療と仕事", "両立支援", "テレワーク", "在宅勤務",
+    "感染症", "熱中症", "腰痛", "VDT", "受動喫煙", "禁煙",
+    "作業環境", "保護具", "安全管理", "衛生管理", "衛生委員会",
+    "特殊健康診断", "一般健康診断", "定期健康診断",
+    "労働基準", "36協定", "働き方改革",
+]
+
 JOURNALS = [
     {"id": "sangyoeisei", "name": "産業衛生学雑誌", "publisher": "日本産業衛生学会",
      "url": "https://www.jstage.jst.go.jp/browse/sangyoeisei/-char/ja",
@@ -38,11 +55,6 @@ def fetch_journal(journal_id, count=5):
         print(f"  Error fetching {journal_id}: {e}")
         return []
 
-def extract_cdata(text):
-    """CDATAの中身を抽出"""
-    m = re.search(r'<!\[CDATA\[([\s\S]*?)\]\]>', text)
-    return m.group(1).strip() if m else text.strip()
-
 def parse_xml(xml):
     articles = []
     entries = xml.split("<entry>")
@@ -50,56 +62,43 @@ def parse_xml(xml):
     for entry in entries[1:]:
         entry = entry.split("</entry>")[0]
         
-        # タイトル取得（article_titleを優先）
+        # タイトル
         title = ""
-        
-        # 1. article_title内の日本語タイトル
-        m = re.search(r'<article_title[^>]*>([\s\S]*?)</article_title>', entry)
+        m = re.search(r'article_title[\s\S]*?<ja>[\s\S]*?CDATA\[([\s\S]*?)\]\]', entry)
         if m:
-            article_title_block = m.group(1)
-            # 日本語タイトル
-            ja_m = re.search(r'<ja>([\s\S]*?)</ja>', article_title_block)
-            if ja_m:
-                title = extract_cdata(ja_m.group(1))
-            # 英語タイトル（日本語がない場合）
-            if not title:
-                en_m = re.search(r'<en>([\s\S]*?)</en>', article_title_block)
-                if en_m:
-                    title = extract_cdata(en_m.group(1))
-        
-        # 2. article_titleがない場合、titleタグから（URLでないもの）
+            title = m.group(1).strip()
         if not title:
-            for m in re.finditer(r'<title[^>]*>([\s\S]*?)</title>', entry):
-                candidate = extract_cdata(m.group(1))
-                if candidate and not candidate.startswith("http"):
-                    title = candidate
-                    break
+            m = re.search(r'article_title[\s\S]*?<en>[\s\S]*?CDATA\[([\s\S]*?)\]\]', entry)
+            if m:
+                title = m.group(1).strip()
+        if not title:
+            m = re.search(r'<title>[\s\S]*?CDATA\[([\s\S]*?)\]\]', entry)
+            if m and not m.group(1).startswith("http"):
+                title = m.group(1).strip()
         
         if not title:
             continue
         
-        # 著者取得
+        # 著者
         authors = []
         author_match = re.search(r'<author>([\s\S]*?)</author>', entry)
         if author_match:
             author_block = author_match.group(1)
-            # 日本語著者名を優先
             ja_block = re.search(r'<ja>([\s\S]*?)</ja>', author_block)
             if ja_block:
-                names = re.findall(r'<!\[CDATA\[([\s\S]*?)\]\]>', ja_block.group(1))
+                names = re.findall(r'CDATA\[([\s\S]*?)\]\]', ja_block.group(1))
                 authors = [n.strip() for n in names if n.strip()]
-            # 英語著者名
-            if not authors:
+            else:
                 en_block = re.search(r'<en>([\s\S]*?)</en>', author_block)
                 if en_block:
-                    names = re.findall(r'<!\[CDATA\[([\s\S]*?)\]\]>', en_block.group(1))
+                    names = re.findall(r'CDATA\[([\s\S]*?)\]\]', en_block.group(1))
                     authors = [n.strip() for n in names if n.strip()]
         
         # 巻号年
-        vol = re.search(r'<prism:volume>(\d+)</prism:volume>', entry)
-        num = re.search(r'<prism:number>([^<]+)</prism:number>', entry)
-        year = re.search(r'<pubyear>(\d+)</pubyear>', entry)
-        link = re.search(r'<link[^>]*href="([^"]+)"', entry)
+        vol = re.search(r'volume>(\d+)<', entry)
+        num = re.search(r'number>([^<]+)<', entry)
+        year = re.search(r'pubyear>(\d+)<', entry)
+        link = re.search(r'link[^>]*href="([^"]+)"', entry)
         
         articles.append({
             "title": title,
@@ -112,12 +111,63 @@ def parse_xml(xml):
     
     return articles[:5]
 
+def fetch_rss():
+    """厚労省RSSから産業保健関連ニュースを取得"""
+    news = []
+    
+    for feed in RSS_FEEDS:
+        try:
+            req = urllib.request.Request(feed["url"], headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                xml = resp.read().decode("utf-8")
+            
+            # RSSアイテムを抽出
+            items = re.findall(r'<item>([\s\S]*?)</item>', xml)
+            
+            for item in items[:50]:  # 最新50件をチェック
+                title_m = re.search(r'<title>([^<]+)</title>', item)
+                link_m = re.search(r'<link>([^<]+)</link>', item)
+                date_m = re.search(r'<dc:date>([^<]+)</dc:date>', item)
+                
+                if not title_m:
+                    continue
+                
+                title = title_m.group(1).strip()
+                
+                # キーワードフィルタ
+                if not any(kw in title for kw in KEYWORDS):
+                    continue
+                
+                link = link_m.group(1).strip() if link_m else ""
+                date_str = ""
+                if date_m:
+                    try:
+                        dt = datetime.fromisoformat(date_m.group(1).replace("+09:00", ""))
+                        date_str = dt.strftime("%Y-%m-%d")
+                    except:
+                        date_str = date_m.group(1)[:10]
+                
+                news.append({
+                    "title": title,
+                    "link": link,
+                    "date": date_str,
+                    "source": feed["name"]
+                })
+        
+        except Exception as e:
+            print(f"  Error fetching RSS {feed['name']}: {e}")
+    
+    # 日付でソート、最新10件
+    news.sort(key=lambda x: x.get("date", ""), reverse=True)
+    return news[:10]
+
 def main():
     print("J-STAGEから論文データを取得中...")
     
     data = {
         "updated": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "journals": []
+        "journals": [],
+        "news": []
     }
     
     for j in JOURNALS:
@@ -125,6 +175,10 @@ def main():
         articles = fetch_journal(j["id"])
         print(f"    -> {len(articles)}件")
         data["journals"].append({**j, "articles": articles})
+    
+    print("厚労省RSSから新着情報を取得中...")
+    data["news"] = fetch_rss()
+    print(f"    -> {len(data['news'])}件")
     
     with open("data.json", "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
