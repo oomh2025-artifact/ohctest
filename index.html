@@ -1,534 +1,823 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronRight, ArrowLeft, BookOpen, FileText, Library, Bell, ExternalLink, Calendar, Tag } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>産業保健情報ポータル</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-// サンプルデータ
-const regulationData = [
-  {
-    id: 1,
-    date: '2026/01/01',
-    category: 'ストレスチェック',
-    title: 'ストレスチェック制度の義務化対象が全事業場に拡大',
-    summary: '労働安全衛生法の改正により、従業員50人未満の事業場にもストレスチェックの実施が義務化されました。',
-    source: '厚生労働省',
-    url: 'https://www.mhlw.go.jp/'
-  },
-  {
-    id: 2,
-    date: '2025/12/15',
-    category: '化学物質管理',
-    title: 'リスクアセスメント対象物質の追加（234物質）',
-    summary: 'SDSの通知・表示義務対象となるリスクアセスメント対象物質が新たに234物質追加されました。',
-    source: '安全衛生情報センター',
-    url: 'https://www.jaish.gr.jp/'
-  },
-  {
-    id: 3,
-    date: '2025/11/01',
-    category: '労働時間',
-    title: '勤務間インターバル制度の努力義務から義務化へ',
-    summary: '終業から次の始業まで11時間以上の休息確保が義務化される方向で検討が進んでいます。',
-    source: '厚生労働省',
-    url: 'https://www.mhlw.go.jp/'
-  },
-  {
-    id: 4,
-    date: '2025/10/01',
-    category: '電子申請',
-    title: '労働安全衛生関係手続きの電子申請義務化',
-    summary: '労働者死傷病報告、産業医選任報告等の手続きについて電子申請が原則義務化されました。',
-    source: '厚生労働省',
-    url: 'https://www.mhlw.go.jp/'
-  },
-  {
-    id: 5,
-    date: '2025/09/15',
-    category: 'ハラスメント',
-    title: 'カスタマーハラスメント防止措置の事業主義務化',
-    summary: '労働施策総合推進法等の改正により、カスハラ防止のための雇用管理上の措置が事業主に義務付けられます。',
-    source: '厚生労働省',
-    url: 'https://www.mhlw.go.jp/'
-  },
-];
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      line-height: 1.6;
+    }
 
-const journalData = [
-  {
-    id: 'sangyoeisei',
-    name: '産業衛生学雑誌',
-    publisher: '日本産業衛生学会',
-    color: '#0066CC',
-    url: 'https://www.jstage.jst.go.jp/browse/sangyoeisei/-char/ja',
-    articles: [
-      { title: '関東地方の医療機関における産業保健の取り組み，医師の働き方改革の準備状況', authors: '小川真規 他', abstract: '医療機関における産業保健活動と働き方改革への対応状況を調査し、課題と今後の方向性を検討した。' },
-      { title: '職業性ストレスと職場のメンタルヘルス', authors: '田中健一 他', abstract: '職業性ストレスが従業員のメンタルヘルスに及ぼす影響について、大規模調査データを用いて分析した。' },
-      { title: '特定業務従事者健康診断の実施対象となる業務とその基準に関する歴史的変遷', authors: '山田太郎 他', abstract: '特定業務従事者健康診断制度の歴史的変遷を整理し、現行制度の課題を明らかにした。' },
-    ]
-  },
-  {
-    id: 'indhealth',
-    name: 'Industrial Health',
-    publisher: '労働安全衛生総合研究所',
-    color: '#006644',
-    url: 'https://www.jstage.jst.go.jp/browse/indhealth/-char/ja',
-    articles: [
-      { title: 'Occupational health service delivery in small enterprises', authors: 'Tanaka K. et al.', abstract: '中小企業における産業保健サービス提供の現状と課題について国際比較研究を実施した。' },
-      { title: 'Association of workplace toilet access with urinary symptoms', authors: 'Lee YM. et al.', abstract: '職場でのトイレアクセスと泌尿器症状・生産性損失との関連を検討した横断研究。' },
-    ]
-  },
-  {
-    id: 'ohpfrev',
-    name: '産業医学レビュー',
-    publisher: '産業医学振興財団',
-    color: '#CC3300',
-    url: 'https://www.jstage.jst.go.jp/browse/ohpfrev/-char/ja',
-    articles: [
-      { title: 'ワーク・エンゲイジメント研究の最新動向', authors: '島津明人', abstract: 'ワーク・エンゲイジメントの測定方法、関連要因、介入研究について最新の知見をレビューした。' },
-      { title: 'デジタルメンタルヘルスの質保証', authors: '川上憲人 他', abstract: 'デジタル技術を活用したメンタルヘルスサービスの質をどう担保するか、国際的な動向を踏まえて考察。' },
-      { title: '職場の熱中症対策：WBGTの活用', authors: '前田節雄', abstract: '暑熱環境下での労働衛生管理について、WBGT指標の活用法と具体的な対策を解説。' },
-    ]
-  },
-  {
-    id: 'jjomh',
-    name: '産業精神保健',
-    publisher: '日本産業精神保健学会',
-    color: '#9933CC',
-    url: 'https://www.jstage.jst.go.jp/browse/jjomh/-char/ja',
-    articles: [
-      { title: '企業に勤める自閉スペクトラム症者におけるソーシャルスキル向上との関連要因', authors: '金子周平', abstract: 'ASD当事者の職場適応を支援するためのソーシャルスキル向上に関連する要因を質的に検討した。' },
-      { title: '日本人女性の自殺率はなぜ2020年に急上昇したのか', authors: '松本俊彦 他', abstract: 'コロナ禍における女性の自殺率上昇の要因について、多角的なデータ分析を行った。' },
-    ]
-  },
-  {
-    id: 'jaohn',
-    name: '日本産業看護学会誌',
-    publisher: '日本産業看護学会',
-    color: '#FF6699',
-    url: 'https://www.jstage.jst.go.jp/browse/jaohn/-char/ja',
-    articles: [
-      { title: '治療と仕事の両立支援における産業看護職と臨床看護職との連携方策', authors: '河野啓子 他', abstract: '両立支援における産業看護職と臨床看護職の連携のあり方について、実態調査と専門家会議を通じて検討。' },
-      { title: '産業看護職の健康施策決定プロセス関与コンピテンシー尺度の開発', authors: '金森悟 他', abstract: '産業看護職が健康施策の決定プロセスに関与するためのコンピテンシーを測定する尺度を開発した。' },
-    ]
-  },
-  {
-    id: 'jaohl',
-    name: '産業保健法学会誌',
-    publisher: '日本産業保健法学会',
-    color: '#336699',
-    url: 'https://www.jstage.jst.go.jp/browse/jaohl/-char/ja',
-    articles: [
-      { title: '中小企業の産業保健と法', authors: '吉田肇 他', abstract: '中小企業における産業保健活動の法的枠組みと実務上の課題について、多角的に検討した。' },
-      { title: '治療と就業の両立支援について', authors: '富賀見英城', abstract: '労働施策総合推進法改正を踏まえた両立支援の法的側面と実務的対応について解説。' },
-    ]
-  },
-];
+    /* ヘッダー */
+    .header {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
 
-const latestNews = [
-  { date: '2026/01/08', type: '制度改正', content: 'ストレスチェック義務化の対象拡大が施行されました' },
-  { date: '2026/01/05', type: '最新記事', content: '産業衛生学雑誌 67巻4号が公開されました' },
-  { date: '2026/01/03', type: '最新記事', content: '産業医学レビュー Vol.38 No.1が公開されました' },
-];
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-// カテゴリカラー
-const categoryColors = {
-  'ストレスチェック': '#E91E63',
-  '化学物質管理': '#FF9800',
-  '労働時間': '#2196F3',
-  '電子申請': '#4CAF50',
-  'ハラスメント': '#9C27B0',
-};
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1e293b;
+      cursor: pointer;
+    }
 
-export default function SanpoPortal() {
-  const [currentPage, setCurrentPage] = useState('home');
-  const [selectedJournal, setSelectedJournal] = useState(null);
-  const [fadeIn, setFadeIn] = useState(true);
+    .logo span {
+      color: #3b82f6;
+    }
 
-  const changePage = (page, journal = null) => {
-    setFadeIn(false);
-    setTimeout(() => {
-      setCurrentPage(page);
-      setSelectedJournal(journal);
-      setFadeIn(true);
-    }, 200);
-  };
+    .nav {
+      display: flex;
+      gap: 0.5rem;
+    }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-      {/* ヘッダー */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <button 
-              onClick={() => changePage('home')}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-            >
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-                <BookOpen className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-800" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>
-                  産業保健情報ポータル
-                </h1>
-                <p className="text-xs text-slate-500">Occupational Health Portal</p>
-              </div>
-            </button>
-            <nav className="flex gap-2">
-              {['制度改正', '最新記事', '雑誌一覧'].map((item, i) => (
-                <button
-                  key={item}
-                  onClick={() => changePage(['regulations', 'articles', 'journals'][i])}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                    currentPage === ['regulations', 'articles', 'journals'][i]
-                      ? 'bg-slate-800 text-white'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-            </nav>
+    .nav-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .nav-btn:hover {
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+
+    .nav-btn.active {
+      background: #1e293b;
+      color: #fff;
+    }
+
+    /* メイン */
+    .main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .page {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ホームページ - メインカード */
+    .main-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .main-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .main-card {
+      padding: 2rem;
+      border-radius: 12px;
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: none;
+      text-align: left;
+      font-family: inherit;
+    }
+
+    .main-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+
+    .main-card.blue { background: #2563eb; }
+    .main-card.amber { background: #f59e0b; }
+    .main-card.green { background: #10b981; }
+
+    .main-card h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .main-card p {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    /* 最新情報ボックス */
+    .news-box {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+    }
+
+    .news-header {
+      background: #1e293b;
+      color: #fff;
+      padding: 1rem 1.5rem;
+      font-weight: 700;
+    }
+
+    .news-list {
+      padding: 1rem;
+    }
+
+    .news-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .news-item:hover {
+      background: #f8fafc;
+    }
+
+    .news-date {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-family: monospace;
+      white-space: nowrap;
+    }
+
+    .news-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .news-tag.blue { background: #dbeafe; color: #1d4ed8; }
+    .news-tag.amber { background: #fef3c7; color: #b45309; }
+
+    .news-text {
+      flex: 1;
+      font-size: 0.875rem;
+    }
+
+    /* 制度改正ページ */
+    .page-title {
+      margin-bottom: 1.5rem;
+    }
+
+    .page-title h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .page-title p {
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .filter-btn:hover {
+      border-color: #cbd5e1;
+    }
+
+    .filter-btn.active {
+      background: #1e293b;
+      color: #fff;
+      border-color: #1e293b;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, #3b82f6, #e2e8f0);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -25px;
+      top: 8px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px #e2e8f0;
+    }
+
+    .timeline-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .timeline-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .timeline-date {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-family: monospace;
+    }
+
+    .timeline-category {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      color: #fff;
+    }
+
+    .timeline-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .timeline-summary {
+      font-size: 0.875rem;
+      color: #475569;
+      line-height: 1.7;
+    }
+
+    .timeline-source {
+      margin-top: 0.75rem;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .timeline-source a {
+      color: #3b82f6;
+      text-decoration: none;
+      margin-left: 0.5rem;
+    }
+
+    .timeline-source a:hover {
+      text-decoration: underline;
+    }
+
+    /* 最新記事ページ */
+    .journal-section {
+      margin-bottom: 2rem;
+    }
+
+    .journal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-radius: 10px 10px 0 0;
+      color: #fff;
+    }
+
+    .journal-header h3 {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .journal-header small {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+
+    .journal-header a {
+      color: rgba(255,255,255,0.9);
+      font-size: 0.75rem;
+      text-decoration: none;
+    }
+
+    .journal-header a:hover {
+      color: #fff;
+    }
+
+    .journal-articles {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      padding: 1rem;
+    }
+
+    .article-item {
+      padding: 1rem;
+      background: #f8fafc;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+    }
+
+    .article-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .article-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .article-authors {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-bottom: 0.5rem;
+    }
+
+    .article-abstract {
+      font-size: 0.8rem;
+      color: #475569;
+      line-height: 1.6;
+    }
+
+    /* 雑誌一覧ページ */
+    .journal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    .journal-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .journal-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    }
+
+    .journal-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+    }
+
+    .journal-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .journal-card p {
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    /* 雑誌詳細 */
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: none;
+      border: none;
+      color: #64748b;
+      font-size: 0.875rem;
+      cursor: pointer;
+      margin-bottom: 1rem;
+      font-family: inherit;
+    }
+
+    .back-btn:hover {
+      color: #1e293b;
+    }
+
+    .journal-detail-header {
+      padding: 2rem;
+      border-radius: 12px;
+      color: #fff;
+      margin-bottom: 1.5rem;
+    }
+
+    .journal-detail-header h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .journal-detail-header p {
+      opacity: 0.8;
+      margin-bottom: 1rem;
+    }
+
+    .journal-detail-header a {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      text-decoration: none;
+    }
+
+    .journal-detail-header a:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .detail-article {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .detail-article h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .detail-article .authors {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-bottom: 1rem;
+    }
+
+    .detail-article .abstract-box {
+      background: #f8fafc;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+
+    .detail-article .abstract-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 0.5rem;
+    }
+
+    .detail-article .abstract-text {
+      font-size: 0.875rem;
+      color: #334155;
+      line-height: 1.7;
+    }
+
+    /* フッター */
+    .footer {
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 2rem;
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo" onclick="showPage('home')">産業保健<span>ポータル</span></div>
+      <nav class="nav">
+        <button class="nav-btn" data-page="regulations" onclick="showPage('regulations')">制度改正</button>
+        <button class="nav-btn" data-page="articles" onclick="showPage('articles')">最新記事</button>
+        <button class="nav-btn" data-page="journals" onclick="showPage('journals')">雑誌一覧</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ホーム -->
+    <div id="page-home" class="page active">
+      <div class="main-cards">
+        <button class="main-card blue" onclick="showPage('regulations')">
+          <h2>制度改正</h2>
+          <p>法令・ガイドラインの最新改正情報を時系列で確認</p>
+        </button>
+        <button class="main-card amber" onclick="showPage('articles')">
+          <h2>最新記事</h2>
+          <p>各学術誌の最新論文タイトルと要約</p>
+        </button>
+        <button class="main-card green" onclick="showPage('journals')">
+          <h2>雑誌一覧</h2>
+          <p>J-STAGEで無料閲覧可能な学術誌</p>
+        </button>
+      </div>
+
+      <div class="news-box">
+        <div class="news-header">New Updates</div>
+        <div class="news-list">
+          <div class="news-item">
+            <span class="news-date">2026/01/08</span>
+            <span class="news-tag blue">制度改正</span>
+            <span class="news-text">ストレスチェック義務化の対象拡大が施行されました</span>
+          </div>
+          <div class="news-item">
+            <span class="news-date">2026/01/05</span>
+            <span class="news-tag amber">最新記事</span>
+            <span class="news-text">産業衛生学雑誌 67巻4号が公開されました</span>
+          </div>
+          <div class="news-item">
+            <span class="news-date">2026/01/03</span>
+            <span class="news-tag amber">最新記事</span>
+            <span class="news-text">産業医学レビュー Vol.38 No.1が公開されました</span>
           </div>
         </div>
-      </header>
-
-      {/* メインコンテンツ */}
-      <main className={`max-w-6xl mx-auto px-6 py-8 transition-all duration-300 ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-        {currentPage === 'home' && <HomePage changePage={changePage} />}
-        {currentPage === 'regulations' && <RegulationsPage />}
-        {currentPage === 'articles' && <ArticlesPage />}
-        {currentPage === 'journals' && !selectedJournal && <JournalsPage changePage={changePage} />}
-        {currentPage === 'journals' && selectedJournal && <JournalDetailPage journal={selectedJournal} goBack={() => changePage('journals')} />}
-      </main>
-
-      {/* フッター */}
-      <footer className="bg-slate-800 text-slate-400 py-8 mt-16">
-        <div className="max-w-6xl mx-auto px-6 text-center text-sm">
-          <p>産業保健に関する法令・ガイドライン・学術情報の収集・整理を目的としたポータルサイトです</p>
-          <p className="mt-2 text-slate-500">※ 本サイトの情報は参考情報です。最新の正確な情報は各公式サイトをご確認ください。</p>
-        </div>
-      </footer>
+      </div>
     </div>
-  );
-}
 
-// ホームページ
-function HomePage({ changePage }) {
-  return (
-    <div className="space-y-10">
-      {/* メインカード */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <MainCard
-          title="制度改正"
-          subtitle="Regulatory Updates"
-          description="産業保健に関する法令・ガイドラインの最新改正情報"
-          color="from-blue-500 to-blue-600"
-          shadowColor="shadow-blue-200"
-          icon={<FileText className="w-8 h-8" />}
-          onClick={() => changePage('regulations')}
-        />
-        <MainCard
-          title="最新記事"
-          subtitle="Latest Articles"
-          description="各学術誌の最新論文・記事のタイトルと要約"
-          color="from-amber-400 to-amber-500"
-          shadowColor="shadow-amber-200"
-          icon={<Bell className="w-8 h-8" />}
-          onClick={() => changePage('articles')}
-        />
-        <MainCard
-          title="雑誌一覧"
-          subtitle="Journal Directory"
-          description="J-STAGEで無料閲覧可能な産業保健関連学術誌"
-          color="from-emerald-500 to-emerald-600"
-          shadowColor="shadow-emerald-200"
-          icon={<Library className="w-8 h-8" />}
-          onClick={() => changePage('journals')}
-        />
+    <!-- 制度改正 -->
+    <div id="page-regulations" class="page">
+      <div class="page-title">
+        <h2>制度改正</h2>
+        <p>産業保健に関する法令・ガイドラインの改正情報</p>
       </div>
 
-      {/* 最新情報ボックス */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-100 overflow-hidden">
-        <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-4">
-          <h2 className="text-white font-bold flex items-center gap-2">
-            <Bell className="w-5 h-5" />
-            New Updates
-          </h2>
-        </div>
-        <div className="p-6 space-y-4">
-          {latestNews.map((news, i) => (
-            <div 
-              key={i} 
-              className="flex items-start gap-4 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              <div className="text-sm text-slate-500 font-mono whitespace-nowrap">{news.date}</div>
-              <span className={`px-3 py-1 text-xs font-bold rounded-full whitespace-nowrap ${
-                news.type === '制度改正' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
-              }`}>
-                {news.type}
-              </span>
-              <div className="text-slate-700 flex-1">{news.content}</div>
-              <ChevronRight className="w-5 h-5 text-slate-400" />
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterRegulations('all', this)">すべて</button>
+        <button class="filter-btn" onclick="filterRegulations('ストレスチェック', this)">ストレスチェック</button>
+        <button class="filter-btn" onclick="filterRegulations('化学物質管理', this)">化学物質管理</button>
+        <button class="filter-btn" onclick="filterRegulations('労働時間', this)">労働時間</button>
+        <button class="filter-btn" onclick="filterRegulations('ハラスメント', this)">ハラスメント</button>
+      </div>
+
+      <div class="timeline" id="timeline">
+        <!-- 動的に生成 -->
+      </div>
+    </div>
+
+    <!-- 最新記事 -->
+    <div id="page-articles" class="page">
+      <div class="page-title">
+        <h2>最新記事</h2>
+        <p>各学術誌の最新論文・記事</p>
+      </div>
+      <div id="articles-list">
+        <!-- 動的に生成 -->
+      </div>
+    </div>
+
+    <!-- 雑誌一覧 -->
+    <div id="page-journals" class="page">
+      <div class="page-title">
+        <h2>雑誌一覧</h2>
+        <p>J-STAGEで無料閲覧可能な産業保健関連学術誌</p>
+      </div>
+      <div class="journal-grid" id="journal-grid">
+        <!-- 動的に生成 -->
+      </div>
+    </div>
+
+    <!-- 雑誌詳細 -->
+    <div id="page-journal-detail" class="page">
+      <button class="back-btn" onclick="showPage('journals')">← 雑誌一覧に戻る</button>
+      <div id="journal-detail-content">
+        <!-- 動的に生成 -->
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    <p>産業保健に関する法令・ガイドライン・学術情報の収集を目的としたポータルサイトです</p>
+    <p style="margin-top: 0.5rem; opacity: 0.7;">※ 本サイトの情報は参考情報です。最新の正確な情報は各公式サイトをご確認ください。</p>
+  </footer>
+
+  <script>
+    // データ
+    const regulations = [
+      { id: 1, date: '2026/01/01', category: 'ストレスチェック', title: 'ストレスチェック制度の義務化対象が全事業場に拡大', summary: '労働安全衛生法の改正により、従業員50人未満の事業場にもストレスチェックの実施が義務化されました。', source: '厚生労働省', color: '#e91e63' },
+      { id: 2, date: '2025/12/15', category: '化学物質管理', title: 'リスクアセスメント対象物質の追加（234物質）', summary: 'SDSの通知・表示義務対象となるリスクアセスメント対象物質が新たに234物質追加されました。', source: '安全衛生情報センター', color: '#ff9800' },
+      { id: 3, date: '2025/11/01', category: '労働時間', title: '勤務間インターバル制度の努力義務強化', summary: '終業から次の始業まで11時間以上の休息確保について、努力義務の実効性を高める措置が検討されています。', source: '厚生労働省', color: '#2196f3' },
+      { id: 4, date: '2025/10/01', category: '化学物質管理', title: '労働安全衛生関係手続きの電子申請義務化', summary: '労働者死傷病報告、産業医選任報告等の手続きについて電子申請が原則義務化されました。', source: '厚生労働省', color: '#ff9800' },
+      { id: 5, date: '2025/09/15', category: 'ハラスメント', title: 'カスタマーハラスメント防止措置の事業主義務化', summary: '労働施策総合推進法等の改正により、カスハラ防止のための雇用管理上の措置が事業主に義務付けられます。', source: '厚生労働省', color: '#9c27b0' },
+    ];
+
+    const journals = [
+      {
+        id: 'sangyoeisei', name: '産業衛生学雑誌', publisher: '日本産業衛生学会', color: '#0066cc',
+        url: 'https://www.jstage.jst.go.jp/browse/sangyoeisei/-char/ja',
+        articles: [
+          { title: '関東地方の医療機関における産業保健の取り組み', authors: '小川真規 他', abstract: '医療機関における産業保健活動と働き方改革への対応状況を調査し、課題と今後の方向性を検討した。' },
+          { title: '職業性ストレスと職場のメンタルヘルス', authors: '田中健一 他', abstract: '職業性ストレスが従業員のメンタルヘルスに及ぼす影響について、大規模調査データを用いて分析した。' },
+        ]
+      },
+      {
+        id: 'indhealth', name: 'Industrial Health', publisher: '労働安全衛生総合研究所', color: '#006644',
+        url: 'https://www.jstage.jst.go.jp/browse/indhealth/-char/ja',
+        articles: [
+          { title: 'Occupational health service in small enterprises', authors: 'Tanaka K. et al.', abstract: '中小企業における産業保健サービス提供の現状と課題について国際比較研究を実施した。' },
+        ]
+      },
+      {
+        id: 'ohpfrev', name: '産業医学レビュー', publisher: '産業医学振興財団', color: '#cc3300',
+        url: 'https://www.jstage.jst.go.jp/browse/ohpfrev/-char/ja',
+        articles: [
+          { title: 'ワーク・エンゲイジメント研究の最新動向', authors: '島津明人', abstract: 'ワーク・エンゲイジメントの測定方法、関連要因、介入研究について最新の知見をレビューした。' },
+          { title: 'デジタルメンタルヘルスの質保証', authors: '川上憲人 他', abstract: 'デジタル技術を活用したメンタルヘルスサービスの質をどう担保するか考察した。' },
+        ]
+      },
+      {
+        id: 'jjomh', name: '産業精神保健', publisher: '日本産業精神保健学会', color: '#9933cc',
+        url: 'https://www.jstage.jst.go.jp/browse/jjomh/-char/ja',
+        articles: [
+          { title: '企業に勤めるASD者のソーシャルスキル向上要因', authors: '金子周平', abstract: 'ASD当事者の職場適応を支援するためのソーシャルスキル向上に関連する要因を検討した。' },
+        ]
+      },
+      {
+        id: 'jaohn', name: '日本産業看護学会誌', publisher: '日本産業看護学会', color: '#e91e63',
+        url: 'https://www.jstage.jst.go.jp/browse/jaohn/-char/ja',
+        articles: [
+          { title: '両立支援における産業看護職と臨床看護職の連携', authors: '河野啓子 他', abstract: '治療と仕事の両立支援における連携のあり方について実態調査を通じて検討した。' },
+        ]
+      },
+      {
+        id: 'jaohl', name: '産業保健法学会誌', publisher: '日本産業保健法学会', color: '#336699',
+        url: 'https://www.jstage.jst.go.jp/browse/jaohl/-char/ja',
+        articles: [
+          { title: '中小企業の産業保健と法', authors: '吉田肇 他', abstract: '中小企業における産業保健活動の法的枠組みと実務上の課題について多角的に検討した。' },
+        ]
+      },
+    ];
+
+    // ページ切り替え
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      
+      document.getElementById('page-' + pageId).classList.add('active');
+      document.querySelector('.nav-btn[data-page="' + pageId + '"]')?.classList.add('active');
+      
+      if (pageId === 'regulations') renderTimeline('all');
+      if (pageId === 'articles') renderArticles();
+      if (pageId === 'journals') renderJournalGrid();
+    }
+
+    // 制度改正タイムライン描画
+    function renderTimeline(filter) {
+      const filtered = filter === 'all' ? regulations : regulations.filter(r => r.category === filter);
+      const html = filtered.map(r => `
+        <div class="timeline-item" data-category="${r.category}">
+          <div class="timeline-dot" style="background: ${r.color}"></div>
+          <div class="timeline-card">
+            <div class="timeline-meta">
+              <span class="timeline-date">${r.date}</span>
+              <span class="timeline-category" style="background: ${r.color}">${r.category}</span>
             </div>
-          ))}
+            <div class="timeline-title">${r.title}</div>
+            <div class="timeline-summary">${r.summary}</div>
+            <div class="timeline-source">出典: ${r.source}</div>
+          </div>
         </div>
-      </div>
+      `).join('');
+      document.getElementById('timeline').innerHTML = html;
+    }
 
-      {/* クイックリンク */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { name: '厚生労働省', url: 'https://www.mhlw.go.jp/', color: 'bg-red-50 text-red-700 border-red-200' },
-          { name: 'こころの耳', url: 'https://kokoro.mhlw.go.jp/', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-          { name: '安全衛生情報センター', url: 'https://www.jaish.gr.jp/', color: 'bg-green-50 text-green-700 border-green-200' },
-          { name: 'J-STAGE', url: 'https://www.jstage.jst.go.jp/', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-        ].map((link) => (
-          <a
-            key={link.name}
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${link.color} border px-4 py-3 rounded-xl text-sm font-medium flex items-center justify-between hover:shadow-md transition-shadow`}
-          >
-            {link.name}
-            <ExternalLink className="w-4 h-4" />
-          </a>
-        ))}
-      </div>
-    </div>
-  );
-}
+    function filterRegulations(category, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTimeline(category);
+    }
 
-// メインカードコンポーネント
-function MainCard({ title, subtitle, description, color, shadowColor, icon, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`group relative bg-gradient-to-br ${color} rounded-2xl p-8 text-white text-left overflow-hidden shadow-xl ${shadowColor} hover:scale-[1.02] hover:shadow-2xl transition-all duration-300`}
-    >
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-      <div className="relative">
-        <div className="mb-4 opacity-90">{icon}</div>
-        <h2 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>{title}</h2>
-        <p className="text-sm opacity-75 mb-3">{subtitle}</p>
-        <p className="text-sm opacity-90 leading-relaxed">{description}</p>
-        <div className="mt-6 flex items-center gap-2 text-sm font-medium opacity-90 group-hover:opacity-100 group-hover:translate-x-2 transition-all">
-          詳しく見る <ChevronRight className="w-4 h-4" />
-        </div>
-      </div>
-    </button>
-  );
-}
-
-// 制度改正ページ
-function RegulationsPage() {
-  const [filter, setFilter] = useState('all');
-  const categories = ['all', ...new Set(regulationData.map(r => r.category))];
-  const filtered = filter === 'all' ? regulationData : regulationData.filter(r => r.category === filter);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>制度改正</h2>
-          <p className="text-slate-500 mt-1">産業保健に関する法令・ガイドラインの改正情報を時系列で確認</p>
-        </div>
-      </div>
-
-      {/* フィルター */}
-      <div className="flex flex-wrap gap-2">
-        {categories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setFilter(cat)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              filter === cat
-                ? 'bg-slate-800 text-white'
-                : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
-            }`}
-          >
-            {cat === 'all' ? 'すべて' : cat}
-          </button>
-        ))}
-      </div>
-
-      {/* タイムライン */}
-      <div className="relative">
-        <div className="absolute left-[11px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500 to-slate-200" />
-        <div className="space-y-6">
-          {filtered.map((item, i) => (
-            <div key={item.id} className="relative pl-10" style={{ animationDelay: `${i * 50}ms` }}>
-              <div 
-                className="absolute left-0 top-2 w-6 h-6 rounded-full border-4 border-white shadow-md"
-                style={{ backgroundColor: categoryColors[item.category] || '#64748b' }}
-              />
-              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition-shadow">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-sm text-slate-500 font-mono flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {item.date}
-                      </span>
-                      <span 
-                        className="px-3 py-1 text-xs font-bold rounded-full text-white"
-                        style={{ backgroundColor: categoryColors[item.category] || '#64748b' }}
-                      >
-                        {item.category}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-2">{item.title}</h3>
-                    <p className="text-slate-600 text-sm leading-relaxed">{item.summary}</p>
-                    <div className="mt-4 flex items-center gap-4">
-                      <span className="text-xs text-slate-400">出典: {item.source}</span>
-                      <a 
-                        href={item.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                      >
-                        詳細を見る <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
+    // 最新記事描画
+    function renderArticles() {
+      const html = journals.map(j => `
+        <div class="journal-section">
+          <div class="journal-header" style="background: ${j.color}">
+            <div>
+              <h3>${j.name}</h3>
+              <small>${j.publisher}</small>
+            </div>
+            <a href="${j.url}" target="_blank">J-STAGEで見る →</a>
+          </div>
+          <div class="journal-articles">
+            ${j.articles.map(a => `
+              <div class="article-item">
+                <div class="article-title">${a.title}</div>
+                <div class="article-authors">${a.authors}</div>
+                <div class="article-abstract">${a.abstract}</div>
               </div>
-            </div>
-          ))}
+            `).join('')}
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      `).join('');
+      document.getElementById('articles-list').innerHTML = html;
+    }
 
-// 最新記事ページ
-function ArticlesPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>最新記事</h2>
-        <p className="text-slate-500 mt-1">各学術誌の最新論文・記事</p>
-      </div>
+    // 雑誌一覧描画
+    function renderJournalGrid() {
+      const html = journals.map(j => `
+        <div class="journal-card" onclick="showJournalDetail('${j.id}')">
+          <div class="journal-card-icon" style="background: ${j.color}20; color: ${j.color}">📚</div>
+          <h3>${j.name}</h3>
+          <p>${j.publisher}</p>
+        </div>
+      `).join('');
+      document.getElementById('journal-grid').innerHTML = html;
+    }
 
-      <div className="space-y-8">
-        {journalData.map((journal) => (
-          <div key={journal.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-            <div 
-              className="px-6 py-4 flex items-center justify-between"
-              style={{ backgroundColor: journal.color }}
-            >
-              <div>
-                <h3 className="text-lg font-bold text-white">{journal.name}</h3>
-                <p className="text-sm text-white/80">{journal.publisher}</p>
-              </div>
-              <a 
-                href={journal.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/90 hover:text-white flex items-center gap-1 text-sm"
-              >
-                J-STAGEで見る <ExternalLink className="w-4 h-4" />
-              </a>
-            </div>
-            <div className="p-6 space-y-4">
-              {journal.articles.slice(0, 2).map((article, i) => (
-                <div key={i} className="p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                  <h4 className="font-bold text-slate-800 mb-1">{article.title}</h4>
-                  <p className="text-sm text-slate-500 mb-2">{article.authors}</p>
-                  <p className="text-sm text-slate-600 leading-relaxed">{article.abstract}</p>
-                </div>
-              ))}
+    // 雑誌詳細表示
+    function showJournalDetail(id) {
+      const j = journals.find(x => x.id === id);
+      if (!j) return;
+
+      const html = `
+        <div class="journal-detail-header" style="background: ${j.color}">
+          <h2>${j.name}</h2>
+          <p>${j.publisher}</p>
+          <a href="${j.url}" target="_blank">J-STAGEで全文を見る →</a>
+        </div>
+        <h3 style="margin-bottom: 1rem; font-weight: 700;">最新号の記事</h3>
+        ${j.articles.map(a => `
+          <div class="detail-article">
+            <h4>${a.title}</h4>
+            <div class="authors">${a.authors}</div>
+            <div class="abstract-box">
+              <div class="abstract-label">要約</div>
+              <div class="abstract-text">${a.abstract}</div>
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+        `).join('')}
+      `;
+      document.getElementById('journal-detail-content').innerHTML = html;
+      
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-journal-detail').classList.add('active');
+    }
 
-// 雑誌一覧ページ
-function JournalsPage({ changePage }) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>雑誌一覧</h2>
-        <p className="text-slate-500 mt-1">J-STAGEで無料閲覧可能な産業保健関連学術誌</p>
-      </div>
+    // 初期描画
+    renderTimeline('all');
+  </script>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {journalData.map((journal) => (
-          <button
-            key={journal.id}
-            onClick={() => changePage('journals', journal)}
-            className="group bg-white rounded-xl border border-slate-200 p-6 text-left hover:shadow-lg hover:border-slate-300 transition-all"
-          >
-            <div 
-              className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-              style={{ backgroundColor: journal.color + '20' }}
-            >
-              <BookOpen className="w-6 h-6" style={{ color: journal.color }} />
-            </div>
-            <h3 className="font-bold text-slate-800 mb-1 group-hover:text-blue-600 transition-colors">{journal.name}</h3>
-            <p className="text-sm text-slate-500 mb-3">{journal.publisher}</p>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400">{journal.articles.length}件の記事</span>
-              <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// 雑誌詳細ページ
-function JournalDetailPage({ journal, goBack }) {
-  return (
-    <div className="space-y-6">
-      <button
-        onClick={goBack}
-        className="flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-colors"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        雑誌一覧に戻る
-      </button>
-
-      <div 
-        className="rounded-2xl p-8 text-white"
-        style={{ backgroundColor: journal.color }}
-      >
-        <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>{journal.name}</h2>
-        <p className="text-white/80 mb-4">{journal.publisher}</p>
-        <a 
-          href={journal.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
-          J-STAGEで全文を見る <ExternalLink className="w-4 h-4" />
-        </a>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-bold text-slate-800 mb-4">最新号の記事</h3>
-        <div className="space-y-4">
-          {journal.articles.map((article, i) => (
-            <div 
-              key={i} 
-              className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow"
-              style={{ animationDelay: `${i * 50}ms` }}
-            >
-              <h4 className="font-bold text-slate-800 text-lg mb-2">{article.title}</h4>
-              <p className="text-sm text-slate-500 mb-3 flex items-center gap-2">
-                <Tag className="w-4 h-4" />
-                {article.authors}
-              </p>
-              <div className="bg-slate-50 rounded-lg p-4">
-                <p className="text-sm font-medium text-slate-500 mb-1">要約</p>
-                <p className="text-slate-700 leading-relaxed">{article.abstract}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+</body>
+</html>
