@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>産業保健ポータル</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --blue: #3b82f6; --blue-dark: #1d4ed8;
+      --orange: #f59e0b; --orange-dark: #ea580c;
+      --green: #10b981; --green-dark: #059669;
+      --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+      --gray-400: #9ca3af; --gray-500: #6b7280; --gray-600: #4b5563;
+      --gray-800: #1f2937; --gray-900: #111827;
+    }
+    body { 
+      font-family: "Inter", "Noto Sans JP", sans-serif;
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      color: var(--gray-800); line-height: 1.6; min-height: 100vh;
+    }
+    header {
+      background: rgba(255,255,255,0.8); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-200);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-inner {
+      max-width: 1200px; margin: 0 auto; padding: 16px 32px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .logo { font-size: 1.25rem; font-weight: 700; color: var(--gray-900); text-decoration: none; }
+    .logo span { color: var(--blue); }
+    nav { display: flex; gap: 32px; }
+    nav a { font-size: 0.9rem; font-weight: 500; color: var(--gray-500); text-decoration: none; transition: color 0.2s; }
+    nav a:hover, nav a.active { color: var(--blue); }
+    main { max-width: 1000px; margin: 0 auto; padding: 48px 32px 80px; }
+    @media (max-width: 768px) {
+      .header-inner { padding: 12px 20px; }
+      nav { gap: 16px; }
+      nav a { font-size: 0.8rem; }
+      main { padding: 32px 20px 60px; }
+    }
+
+    .hero-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 64px; }
+    .hero-card {
+      position: relative; overflow: hidden; padding: 32px; border-radius: 20px;
+      color: white; text-decoration: none; min-height: 180px;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hero-card:hover { transform: translateY(-6px); }
+    .hero-card.blue { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); box-shadow: 0 10px 40px -10px rgba(59,130,246,0.5); }
+    .hero-card.orange { background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); box-shadow: 0 10px 40px -10px rgba(245,158,11,0.5); }
+    .hero-card.green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 10px 40px -10px rgba(16,185,129,0.5); }
+    .hero-card h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+    .hero-card p { font-size: 0.9rem; opacity: 0.9; }
+    .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .section-header h3 { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray-400); }
+    .section-header::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
+    .quick-links { background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; }
+    .quick-link { display: flex; align-items: center; gap: 16px; padding: 20px 24px; text-decoration: none; color: inherit; border-bottom: 1px solid var(--gray-100); transition: background 0.2s; }
+    .quick-link:last-child { border-bottom: none; }
+    .quick-link:hover { background: var(--gray-50); }
+    .quick-link .tag { font-size: 0.7rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
+    .tag.jstage { background: #dbeafe; color: #1d4ed8; }
+    .quick-link .text { flex: 1; font-size: 0.95rem; font-weight: 500; color: var(--gray-800); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .quick-link .meta { font-size: 0.8rem; color: var(--gray-400); white-space: nowrap; }
+    .quick-link .arrow { color: var(--gray-300); transition: transform 0.2s, color 0.2s; }
+    .quick-link:hover .arrow { transform: translateX(4px); color: var(--blue); }
+    .loading-item { padding: 24px; text-align: center; color: var(--gray-400); }
+    footer { background: var(--gray-900); color: white; padding: 48px 32px; text-align: center; }
+    footer p { font-size: 0.85rem; opacity: 0.7; margin-bottom: 8px; }
+    footer small { font-size: 0.75rem; opacity: 0.4; }
+    @media (max-width: 768px) {
+      .hero-cards { grid-template-columns: 1fr; gap: 16px; margin-bottom: 48px; }
+      .hero-card { min-height: 120px; padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a href="index.html" class="logo">産業保健<span>ポータル</span></a>
+      <nav>
+        <a href="seido.html">制度改正</a>
+        <a href="articles.html">最新記事</a>
+        <a href="journals.html">雑誌一覧</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="hero-cards">
+      <a href="seido.html" class="hero-card blue">
+        <h2>制度改正</h2>
+        <p>法令・ガイドラインの最新改正情報</p>
+      </a>
+      <a href="articles.html" class="hero-card orange">
+        <h2>最新記事</h2>
+        <p>各学術誌の最新論文</p>
+      </a>
+      <a href="journals.html" class="hero-card green">
+        <h2>雑誌一覧</h2>
+        <p>J-STAGE無料閲覧可能な学術誌</p>
+      </a>
+    </div>
+    <div class="section-header"><h3>Quick Links</h3></div>
+    <div class="quick-links">
+      <a href="https://www.jstage.jst.go.jp/article/sangyoeisei/65/1/65_2021-027-B/_article/-char/ja/" target="_blank" class="quick-link">
+        <span class="tag jstage">J-STAGE</span>
+        <span class="text">特定健康診査に用いられる主観的な咀嚼状態に関する質問項目と男性勤労者における口腔状態の関連性</span>
+        <span class="meta">2023年 65巻</span>
+        <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="https://www.jstage.jst.go.jp/article/sangyoeisei/65/1/65_2021-039-B/_article/-char/ja/" target="_blank" class="quick-link">
+        <span class="tag jstage">J-STAGE</span>
+        <span class="text">医療機関職員の新型コロナウィルス（SARS-CoV-2）ワクチン接種直後から約3ヶ月後及び9ヶ月後のスパイク蛋白特異的IgG抗体の保有状況についての調査</span>
+        <span class="meta">2023年 65巻</span>
+        <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="https://www.jstage.jst.go.jp/article/indhealth/61/1/61_2021-0169/_article/-char/ja/" target="_blank" class="quick-link">
+        <span class="tag jstage">J-STAGE</span>
+        <span class="text">Shinichi IWASAKI</span>
+        <span class="meta">2023年 61巻</span>
+        <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="https://www.jstage.jst.go.jp/article/indhealth/61/1/61_2021-0250/_article/-char/ja/" target="_blank" class="quick-link">
+        <span class="tag jstage">J-STAGE</span>
+        <span class="text">Kazunori IKEGAMI</span>
+        <span class="meta">2023年 61巻</span>
+        <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="https://www.jstage.jst.go.jp/article/ohpfrev/35/3/35_1/_article/-char/ja/" target="_blank" class="quick-link">
+        <span class="tag jstage">J-STAGE</span>
+        <span class="text">加熱式タバコの発がん性評価の最新動向</span>
+        <span class="meta">2023年 35巻</span>
+        <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </main>
+  <footer>
+    <p>産業保健に関する法令・ガイドライン・学術情報の収集を目的としたポータルサイトです</p>
+    <small>最終更新: 2026-01-08 22:18</small>
+  </footer>
+</body>
+</html>
