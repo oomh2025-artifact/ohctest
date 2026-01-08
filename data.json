@@ -1,0 +1,53 @@
+{
+  "updated": "2025-01-09 00:00",
+  "journals": [
+    {
+      "id": "sangyoeisei",
+      "name": "産業衛生学雑誌",
+      "publisher": "日本産業衛生学会",
+      "url": "https://www.jstage.jst.go.jp/browse/sangyoeisei/-char/ja",
+      "desc": "産業保健・労働衛生分野の原著論文、総説、症例報告などを掲載。国内最大の産業保健専門誌。",
+      "articles": []
+    },
+    {
+      "id": "indhealth",
+      "name": "Industrial Health",
+      "publisher": "労働安全衛生総合研究所",
+      "url": "https://www.jstage.jst.go.jp/browse/indhealth/-char/ja",
+      "desc": "世界各国の産業保健研究を掲載する国際英文誌。オープンアクセス。",
+      "articles": []
+    },
+    {
+      "id": "ohpfrev",
+      "name": "産業医学レビュー",
+      "publisher": "産業医学振興財団",
+      "url": "https://www.jstage.jst.go.jp/browse/ohpfrev/-char/ja",
+      "desc": "産業医・産業保健専門職向けの実務に役立つ総説・解説誌。",
+      "articles": []
+    },
+    {
+      "id": "jjomh",
+      "name": "産業精神保健",
+      "publisher": "日本産業精神保健学会",
+      "url": "https://www.jstage.jst.go.jp/browse/jjomh/-char/ja",
+      "desc": "職場のメンタルヘルスに特化。ストレスチェック、復職支援などを掲載。",
+      "articles": []
+    },
+    {
+      "id": "jaohn",
+      "name": "日本産業看護学会誌",
+      "publisher": "日本産業看護学会",
+      "url": "https://www.jstage.jst.go.jp/browse/jaohn/-char/ja",
+      "desc": "産業看護職の実践と研究に関する論文を掲載。",
+      "articles": []
+    },
+    {
+      "id": "jaohl",
+      "name": "産業保健法学会誌",
+      "publisher": "日本産業保健法学会",
+      "url": "https://www.jstage.jst.go.jp/browse/jaohl/-char/ja",
+      "desc": "産業保健と法律の接点を扱う専門誌。労働安全衛生法、労災認定など。",
+      "articles": []
+    }
+  ]
+}
