@@ -7,63 +7,83 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", sans-serif;
-      background: #f5f7fa; color: #333; line-height: 1.6;
-      min-height: 100vh; padding: 40px 20px;
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+      background: #fafafa; color: #222; line-height: 1.7;
+      min-height: 100vh; padding: 60px 24px;
     }
-    .container { max-width: 800px; margin: 0 auto; }
-    .back { display: inline-block; margin-bottom: 24px; color: #0066cc; text-decoration: none; font-size: 0.95rem; }
-    .back:hover { text-decoration: underline; }
+    .container { max-width: 720px; margin: 0 auto; }
+    
+    .back { 
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.8rem; color: #888; text-decoration: none; 
+      margin-bottom: 40px; transition: color 0.2s;
+    }
+    .back:hover { color: #ea580c; }
+    .back svg { width: 16px; height: 16px; }
+    
     h1 { 
-      color: #F5A623; font-size: 1.6rem; margin-bottom: 8px; 
-      padding-bottom: 12px; border-bottom: 4px solid #F5A623; 
+      font-size: 1.5rem; font-weight: 600; color: #ea580c;
+      margin-bottom: 8px; padding-bottom: 16px;
+      border-bottom: 2px solid #ea580c;
     }
-    .updated { font-size: 0.85rem; color: #888; margin-bottom: 30px; }
+    .updated { font-size: 0.75rem; color: #aaa; margin-bottom: 40px; }
+    
     .journal { 
-      background: white; border-radius: 8px; padding: 24px; 
-      margin-bottom: 24px; border: 1px solid #e0e0e0;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      background: #fff; border-radius: 8px; 
+      padding: 24px; margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    .journal h2 { font-size: 1.15rem; color: #333; margin-bottom: 4px; }
+    .journal-header { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
+    .journal h2 { font-size: 1rem; font-weight: 600; color: #333; margin-bottom: 2px; }
     .journal h2 a { color: inherit; text-decoration: none; }
-    .journal h2 a:hover { color: #F5A623; }
-    .journal .meta { font-size: 0.85rem; color: #888; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
-    .article { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
-    .article:last-child { border-bottom: none; }
-    .article-title { font-size: 0.95rem; margin-bottom: 4px; }
-    .article-title a { color: #0066cc; text-decoration: none; }
-    .article-title a:hover { text-decoration: underline; }
-    .article-meta { font-size: 0.85rem; color: #666; }
-    .article-issue { font-size: 0.8rem; color: #999; margin-top: 2px; }
+    .journal h2 a:hover { color: #ea580c; }
+    .journal .meta { font-size: 0.75rem; color: #aaa; }
+    
+    .article { padding: 12px 0; border-bottom: 1px solid #f5f5f5; }
+    .article:last-child { border-bottom: none; padding-bottom: 0; }
+    .article-title { font-size: 0.9rem; margin-bottom: 4px; }
+    .article-title a { color: #333; text-decoration: none; }
+    .article-title a:hover { color: #ea580c; }
+    .article-meta { font-size: 0.8rem; color: #999; }
+    
     .loading { 
-      text-align: center; padding: 60px; color: #888; 
-      background: white; border-radius: 8px; border: 1px solid #e0e0e0;
+      background: #fff; border-radius: 8px; padding: 60px;
+      text-align: center; color: #aaa; font-size: 0.85rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    .loading-spinner { 
-      width: 40px; height: 40px; border: 3px solid #f0f0f0; 
-      border-top-color: #F5A623; border-radius: 50%; 
-      animation: spin 1s linear infinite; margin: 0 auto 16px;
+    .spinner { 
+      width: 32px; height: 32px; border: 2px solid #f0f0f0; 
+      border-top-color: #ea580c; border-radius: 50%; 
+      animation: spin 0.8s linear infinite; margin: 0 auto 16px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .error { color: #cc0000; }
-    .no-data { color: #999; font-style: italic; padding: 12px 0; }
+    
+    @media (max-width: 540px) {
+      body { padding: 40px 16px; }
+      h1 { font-size: 1.3rem; }
+      .journal { padding: 20px; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <a href="index.html" class="back">← トップに戻る</a>
+    <a href="index.html" class="back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      トップに戻る
+    </a>
+    
     <h1>最新記事</h1>
     <div class="updated" id="updated"></div>
+    
     <div id="content">
       <div class="loading">
-        <div class="loading-spinner"></div>
-        J-STAGEから最新論文を取得中...
+        <div class="spinner"></div>
+        J-STAGEから取得中...
       </div>
     </div>
   </div>
 
   <script>
-    // ★ここを自分のWorker URLに変更
     const WORKER_URL = "https://sanpo-portal.oomh2025.workers.dev";
     
     const JOURNAL_INFO = {
@@ -84,27 +104,24 @@
         if (!res.ok) throw new Error("API error");
         const data = await res.json();
         
-        // 更新日時
         const now = new Date();
         updatedEl.textContent = `最終取得: ${now.toLocaleString("ja-JP")}`;
         
-        // 各雑誌を表示
         let html = "";
         for (const journal of data.journals) {
           const info = JOURNAL_INFO[journal.id] || { name: journal.id, publisher: "", url: "#" };
           
           html += `<div class="journal">
-            <h2><a href="${info.url}" target="_blank">${info.name}</a></h2>
-            <div class="meta">${info.publisher}</div>`;
+            <div class="journal-header">
+              <h2><a href="${info.url}" target="_blank">${info.name}</a></h2>
+              <div class="meta">${info.publisher}</div>
+            </div>`;
           
           if (journal.articles && journal.articles.length > 0) {
             for (const article of journal.articles) {
-              const authors = article.authors ? article.authors.slice(0, 3).join(", ") : "";
-              const authorsDisplay = article.authors && article.authors.length > 3 
-                ? authors + " 他" : authors;
-              const issue = article.year 
-                ? `${article.year}年 ${article.volume || ""}巻${article.number ? article.number + "号" : ""}`
-                : "";
+              const authors = article.authors?.slice(0, 3).join(", ") || "";
+              const authorsMore = article.authors?.length > 3 ? " 他" : "";
+              const issue = article.year ? `${article.year}年 ${article.volume || ""}巻${article.number || ""}号` : "";
               
               html += `<div class="article">
                 <div class="article-title">
@@ -112,12 +129,11 @@
                     ? `<a href="${article.link}" target="_blank">${article.title}</a>`
                     : article.title}
                 </div>
-                ${authorsDisplay ? `<div class="article-meta">${authorsDisplay}</div>` : ""}
-                ${issue ? `<div class="article-issue">${issue}</div>` : ""}
+                <div class="article-meta">${authors}${authorsMore}${issue ? ` / ${issue}` : ""}</div>
               </div>`;
             }
           } else {
-            html += `<div class="no-data">論文データがありません</div>`;
+            html += `<div class="article"><div class="article-meta">データなし</div></div>`;
           }
           
           html += `</div>`;
@@ -127,12 +143,7 @@
         
       } catch (e) {
         console.error(e);
-        container.innerHTML = `
-          <div class="loading error">
-            <p>データの取得に失敗しました。</p>
-            <p style="margin-top:12px;font-size:0.9rem;">しばらく待ってからページを再読み込みしてください。</p>
-          </div>
-        `;
+        container.innerHTML = `<div class="loading">データの取得に失敗しました。<br>しばらく待ってから再読み込みしてください。</div>`;
       }
     }
 
