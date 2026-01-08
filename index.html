@@ -256,95 +256,88 @@
 
     async function fetchJournalDirect(j) {
       try {
-        // sortflg=2: 巻号順ソート, pubyearfrom: 最新年のみ取得
         const currentYear = new Date().getFullYear();
         const apiUrl = 'https://api.jstage.jst.go.jp/searchapi/do?service=3&cdjournal=' + j.cdjournal + '&count=10&sortflg=2&pubyearfrom=' + (currentYear - 1);
         const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
         
-        const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+        const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
         if (!res.ok) throw new Error('HTTP ' + res.status);
-        const xml = await res.text();
+        const xmlText = await res.text();
         
-        // ヘルパー関数: タグの中身を取得
-        function getTag(str, tag) {
-          const re = new RegExp('<' + tag + '[^>]*>([\\s\\S]*?)</' + tag + '>', 'i');
-          const m = str.match(re);
-          return m ? m[1] : '';
-        }
+        // DOMParserでXMLをパース
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(xmlText, 'text/xml');
+        const entries = xml.querySelectorAll('entry');
         
-        // ヘルパー関数: CDATA除去とクリーンアップ
-        function clean(str) {
-          return (str || '').replace(/<!\[CDATA\[/g, '').replace(/\]\]>/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-        }
+        console.log(j.name + ': ' + entries.length + ' entries found');
         
         const articles = [];
-        const entries = xml.split('<entry>');
-        
-        // 最新の巻号を記録
         let latestVol = 0, latestNo = 0, latestYear = 0;
         
-        for (let i = 1; i < entries.length && articles.length < 3; i++) {
-          const entry = entries[i];
+        entries.forEach(function(entry, idx) {
+          if (articles.length >= 3) return;
           
-          // 巻号情報を取得
-          const vol = parseInt(clean(getTag(entry, 'prism:volume'))) || 0;
-          const no = parseInt(clean(getTag(entry, 'prism:number'))) || 0;
-          const year = parseInt(clean(getTag(entry, 'pubyear'))) || 0;
+          // 巻号情報
+          const volEl = entry.querySelector('prism\\:volume, volume');
+          const noEl = entry.querySelector('prism\\:number, number');
+          const yearEl = entry.querySelector('pubyear');
+          const vol = volEl ? parseInt(volEl.textContent) || 0 : 0;
+          const no = noEl ? parseInt(noEl.textContent) || 0 : 0;
+          const year = yearEl ? parseInt(yearEl.textContent) || 0 : 0;
           
-          // 最新の巻号を更新
           if (year > latestYear || (year === latestYear && vol > latestVol) || (year === latestYear && vol === latestVol && no > latestNo)) {
-            latestYear = year;
-            latestVol = vol;
-            latestNo = no;
+            latestYear = year; latestVol = vol; latestNo = no;
           }
           
-          // タイトル取得: <article_title><ja><![CDATA[タイトル]]></ja></article_title>
+          // タイトル取得
           let title = '';
-          const articleTitle = getTag(entry, 'article_title');
-          if (articleTitle) {
-            const jaTitle = getTag(articleTitle, 'ja');
-            const enTitle = getTag(articleTitle, 'en');
-            title = clean(jaTitle) || clean(enTitle);
+          const articleTitleEl = entry.querySelector('article_title');
+          if (articleTitleEl) {
+            const jaEl = articleTitleEl.querySelector('ja');
+            const enEl = articleTitleEl.querySelector('en');
+            if (jaEl) title = jaEl.textContent.trim();
+            else if (enEl) title = enEl.textContent.trim();
           }
-          // article_titleが空の場合、titleタグを試すがURLは除外
           if (!title) {
-            const titleTag = clean(getTag(entry, 'title'));
-            // URLでなければ使用
-            if (titleTag && !titleTag.startsWith('http')) {
-              title = titleTag;
+            const titleEl = entry.querySelector('title');
+            if (titleEl) {
+              const t = titleEl.textContent.trim();
+              if (!t.startsWith('http')) title = t;
             }
           }
           
-          // 著者取得: <author><ja><n><![CDATA[著者名]]></n></ja></author>
+          // 著者取得
           let authors = '';
-          const authorBlock = getTag(entry, 'author');
-          if (authorBlock) {
-            const jaAuthor = getTag(authorBlock, 'ja');
-            const enAuthor = getTag(authorBlock, 'en');
-            const src = jaAuthor || enAuthor || authorBlock;
+          const authorEl = entry.querySelector('author');
+          if (authorEl) {
+            const jaAuthor = authorEl.querySelector('ja');
+            const enAuthor = authorEl.querySelector('en');
+            const authorSrc = jaAuthor || enAuthor || authorEl;
+            const nameEls = authorSrc.querySelectorAll('n');
             const names = [];
-            const nRe = /<n>([\s\S]*?)<\/n>/g;
-            let m;
-            while ((m = nRe.exec(src)) !== null) {
-              const name = clean(m[1]);
+            nameEls.forEach(function(n) {
+              const name = n.textContent.trim();
               if (name) names.push(name);
-            }
+            });
             if (names.length > 2) authors = names[0] + ' 他';
             else if (names.length > 0) authors = names.join(', ');
           }
           
+          console.log('  [' + idx + '] title=' + title.slice(0,30) + '... authors=' + authors);
+          
           if (title && title.length > 3) {
             articles.push({ title: title.slice(0, 100), authors: authors });
           }
-        }
+        });
         
-        // 巻号文字列を生成
         let issue = '';
         if (latestVol > 0) {
           if (latestYear > 0) issue += latestYear + '年 ';
           issue += latestVol + '巻';
           if (latestNo > 0) issue += latestNo + '号';
         }
+        
+        console.log(j.name + ': ' + articles.length + ' articles, issue=' + issue);
         
         return {
           id: j.id, name: j.name, publisher: j.publisher, color: j.color,
@@ -353,7 +346,7 @@
           latest_issue: issue, articles: articles
         };
       } catch (e) {
-        console.error(j.name + ': ' + e.message);
+        console.error(j.name + ' ERROR: ' + e.message);
         return {
           id: j.id, name: j.name, publisher: j.publisher, color: j.color,
           url: 'https://www.jstage.jst.go.jp/browse/' + j.cdjournal + '/-char/ja',
