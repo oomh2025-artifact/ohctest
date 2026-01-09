@@ -105,7 +105,7 @@
     
     .cards {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 16px;
       margin-bottom: 80px;
     }
@@ -134,6 +134,7 @@
     .card:nth-child(1) .card-icon { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; }
     .card:nth-child(2) .card-icon { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); color: white; }
     .card:nth-child(3) .card-icon { background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); color: white; }
+    .card:nth-child(4) .card-icon { background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%); color: white; }
     .card h2 {
       font-size: 1.125rem;
       font-weight: 600;
@@ -259,6 +260,7 @@
         <a href="seido.html">制度改正</a>
         <a href="articles.html">最新記事</a>
         <a href="journals.html">雑誌一覧</a>
+        <a href="search.html">検索</a>
       </nav>
     </div>
   </header>
@@ -296,6 +298,16 @@
         </div>
         <h2>雑誌一覧</h2>
         <p>J-STAGE無料閲覧<br>可能な学術誌</p>
+        <div class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </a>
+      <a href="search.html" class="card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+        <h2>キーワード検索</h2>
+        <p>類義語シソーラスで<br>論文を横断検索</p>
         <div class="card-arrow">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </div>
@@ -343,7 +355,7 @@
   </main>
   
   <footer>
-    <p>© SANPO PORTAL · Last updated: 2026-01-08 23:05</p>
+    <p>© SANPO PORTAL · Last updated: 2026-01-09 00:06</p>
   </footer>
 </body>
 </html>
