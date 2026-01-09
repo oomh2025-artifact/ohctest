@@ -104,6 +104,7 @@ HEADER_HTML = '''<header>
         <a href="seido.html"{seido_active}>制度改正</a>
         <a href="articles.html"{articles_active}>最新記事</a>
         <a href="journals.html"{journals_active}>雑誌一覧</a>
+        <a href="search.html"{search_active}>検索</a>
       </nav>
     </div>
   </header>'''
@@ -173,7 +174,7 @@ def generate_index(data):
     
     .cards {{
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 16px;
       margin-bottom: 80px;
     }}
@@ -202,6 +203,7 @@ def generate_index(data):
     .card:nth-child(1) .card-icon {{ background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; }}
     .card:nth-child(2) .card-icon {{ background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); color: white; }}
     .card:nth-child(3) .card-icon {{ background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); color: white; }}
+    .card:nth-child(4) .card-icon {{ background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%); color: white; }}
     .card h2 {{
       font-size: 1.125rem;
       font-weight: 600;
@@ -313,7 +315,7 @@ def generate_index(data):
   </style>
 </head>
 <body>
-  {HEADER_HTML.format(seido_active="", articles_active="", journals_active="")}
+  {HEADER_HTML.format(seido_active="", articles_active="", journals_active="", search_active="")}
   <main>
     <section class="hero">
       <div class="hero-badge">産業保健専門ポータル</div>
@@ -348,6 +350,16 @@ def generate_index(data):
         </div>
         <h2>雑誌一覧</h2>
         <p>J-STAGE無料閲覧<br>可能な学術誌</p>
+        <div class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{ICONS["arrow"]}</svg>
+        </div>
+      </a>
+      <a href="search.html" class="card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{ICONS["search"]}</svg>
+        </div>
+        <h2>キーワード検索</h2>
+        <p>類義語シソーラスで<br>論文を横断検索</p>
         <div class="card-arrow">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{ICONS["arrow"]}</svg>
         </div>
@@ -520,7 +532,7 @@ def generate_seido(data):
   </style>
 </head>
 <body>
-  {HEADER_HTML.format(seido_active=' class="active"', articles_active="", journals_active="")}
+  {HEADER_HTML.format(seido_active=' class="active"', articles_active="", journals_active="", search_active="")}
   <main>
     <div class="page-header">
       <h1>制度改正・法令情報</h1>
@@ -643,7 +655,7 @@ def generate_articles(data):
   </style>
 </head>
 <body>
-  {HEADER_HTML.format(seido_active="", articles_active=' class="active"', journals_active="")}
+  {HEADER_HTML.format(seido_active="", articles_active=' class="active"', journals_active="", search_active="")}
   <main>
     <div class="page-header">
       <h1>最新記事</h1>
@@ -757,7 +769,7 @@ def generate_journals(data):
   </style>
 </head>
 <body>
-  {HEADER_HTML.format(seido_active="", articles_active="", journals_active=' class="active"')}
+  {HEADER_HTML.format(seido_active="", articles_active="", journals_active=' class="active"', search_active="")}
   <main>
     <div class="page-header">
       <h1>雑誌一覧</h1>
@@ -766,6 +778,348 @@ def generate_journals(data):
     <div class="journal-list">{journals_html}
     </div>
   </main>
+</body>
+</html>'''
+
+def generate_search(data):
+    # thesaurus.jsonを読み込む
+    try:
+        with open("thesaurus.json", encoding="utf-8") as f:
+            thesaurus = json.load(f)
+    except:
+        thesaurus = {}
+    
+    # JavaScriptに渡すデータ
+    articles_js = []
+    for j in data["journals"]:
+        for a in j.get("articles", []):
+            articles_js.append({
+                "title": a.get("title", ""),
+                "authors": a.get("authors", []),
+                "journal": j["name"],
+                "year": a.get("year", ""),
+                "volume": a.get("volume", ""),
+                "number": a.get("number", ""),
+                "link": a.get("link", "")
+            })
+    
+    return f'''<!DOCTYPE html>
+<html lang="ja">
+<head>
+  {COMMON_HEAD}
+  <title>キーワード検索 - SANPO PORTAL</title>
+  <style>{COMMON_STYLE}
+    .page-header {{
+      padding: 40px 0 40px;
+    }}
+    .page-header h1 {{
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }}
+    .page-header p {{
+      font-size: 1rem;
+      color: var(--text-muted);
+    }}
+    .search-box {{
+      background: var(--bg-secondary);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 32px;
+    }}
+    .search-input-wrap {{
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }}
+    .search-input {{
+      flex: 1;
+      padding: 14px 20px;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }}
+    .search-input:focus {{
+      border-color: var(--accent-1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }}
+    .search-btn {{
+      padding: 14px 28px;
+      background: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }}
+    .search-btn:hover {{
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }}
+    .search-options {{
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }}
+    .search-option {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }}
+    .search-option input {{
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-1);
+    }}
+    .search-option label {{
+      font-size: 0.9rem;
+      color: var(--text);
+      cursor: pointer;
+    }}
+    .synonyms-info {{
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(99, 102, 241, 0.05);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--accent-1);
+      display: none;
+    }}
+    .synonyms-info.show {{
+      display: block;
+    }}
+    .results-header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }}
+    .results-count {{
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }}
+    .results-count strong {{
+      color: var(--accent-1);
+    }}
+    .result-item {{
+      display: block;
+      padding: 20px 24px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      text-decoration: none;
+      color: inherit;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }}
+    .result-item:hover {{
+      background: white;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      transform: translateX(4px);
+    }}
+    .result-title {{
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }}
+    .result-item:hover .result-title {{
+      color: var(--accent-1);
+    }}
+    .result-title mark {{
+      background: rgba(245, 158, 11, 0.3);
+      color: inherit;
+      padding: 0 2px;
+      border-radius: 2px;
+    }}
+    .result-meta {{
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }}
+    .result-journal {{
+      display: inline-block;
+      padding: 4px 10px;
+      background: var(--border-light);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-right: 12px;
+    }}
+    .no-results {{
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }}
+    .no-results h3 {{
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      color: var(--text);
+    }}
+    .initial-state {{
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }}
+    .initial-state svg {{
+      width: 48px;
+      height: 48px;
+      color: var(--border);
+      margin-bottom: 16px;
+    }}
+  </style>
+</head>
+<body>
+  {HEADER_HTML.format(seido_active="", articles_active="", journals_active="", search_active=' class="active"')}
+  <main>
+    <div class="page-header">
+      <h1>キーワード検索</h1>
+      <p>6つの学術誌からキーワードで論文を検索</p>
+    </div>
+    
+    <div class="search-box">
+      <div class="search-input-wrap">
+        <input type="text" class="search-input" id="searchInput" placeholder="キーワードを入力（例: メンタルヘルス、ストレス）" />
+        <button class="search-btn" onclick="doSearch()">検索</button>
+      </div>
+      <div class="search-options">
+        <div class="search-option">
+          <input type="radio" name="searchMode" id="exactMatch" value="exact" checked />
+          <label for="exactMatch">完全一致</label>
+        </div>
+        <div class="search-option">
+          <input type="radio" name="searchMode" id="synonymMatch" value="synonym" />
+          <label for="synonymMatch">類義語も検索</label>
+        </div>
+      </div>
+      <div class="synonyms-info" id="synonymsInfo"></div>
+    </div>
+    
+    <div id="resultsArea">
+      <div class="initial-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <p>キーワードを入力して検索してください</p>
+      </div>
+    </div>
+  </main>
+  
+  <script>
+    const articles = {json.dumps(articles_js, ensure_ascii=False)};
+    const thesaurus = {json.dumps(thesaurus, ensure_ascii=False)};
+    
+    const searchInput = document.getElementById('searchInput');
+    const synonymsInfo = document.getElementById('synonymsInfo');
+    
+    searchInput.addEventListener('keypress', (e) => {{
+      if (e.key === 'Enter') doSearch();
+    }});
+    
+    function getSynonyms(keyword) {{
+      const kw = keyword.toLowerCase();
+      let synonyms = [keyword];
+      
+      // 完全一致でシソーラスを検索
+      for (const [key, values] of Object.entries(thesaurus)) {{
+        if (key.toLowerCase() === kw || key.toLowerCase().includes(kw)) {{
+          synonyms = synonyms.concat(values);
+          synonyms.push(key);
+        }}
+        // 値にも含まれているかチェック
+        for (const v of values) {{
+          if (v.toLowerCase() === kw || v.toLowerCase().includes(kw)) {{
+            synonyms = synonyms.concat(values);
+            synonyms.push(key);
+            break;
+          }}
+        }}
+      }}
+      
+      return [...new Set(synonyms)];
+    }}
+    
+    function highlightText(text, keywords) {{
+      let result = text;
+      for (const kw of keywords) {{
+        const regex = new RegExp('(' + kw.replace(/[.*+?^${{}}()|[\\]\\\\]/g, '\\\\$&') + ')', 'gi');
+        result = result.replace(regex, '<mark>$1</mark>');
+      }}
+      return result;
+    }}
+    
+    function doSearch() {{
+      const keyword = searchInput.value.trim();
+      if (!keyword) return;
+      
+      const mode = document.querySelector('input[name="searchMode"]:checked').value;
+      let searchTerms = [keyword];
+      
+      if (mode === 'synonym') {{
+        searchTerms = getSynonyms(keyword);
+        if (searchTerms.length > 1) {{
+          synonymsInfo.innerHTML = '🔍 検索語: ' + searchTerms.join(', ');
+          synonymsInfo.classList.add('show');
+        }} else {{
+          synonymsInfo.classList.remove('show');
+        }}
+      }} else {{
+        synonymsInfo.classList.remove('show');
+      }}
+      
+      const results = articles.filter(article => {{
+        const text = (article.title + ' ' + article.authors.join(' ')).toLowerCase();
+        return searchTerms.some(term => text.includes(term.toLowerCase()));
+      }});
+      
+      renderResults(results, searchTerms);
+    }}
+    
+    function renderResults(results, keywords) {{
+      const area = document.getElementById('resultsArea');
+      
+      if (results.length === 0) {{
+        area.innerHTML = `
+          <div class="no-results">
+            <h3>該当する論文が見つかりませんでした</h3>
+            <p>別のキーワードをお試しください</p>
+          </div>
+        `;
+        return;
+      }}
+      
+      let html = `
+        <div class="results-header">
+          <span class="results-count"><strong>${{results.length}}</strong> 件の論文が見つかりました</span>
+        </div>
+      `;
+      
+      for (const r of results) {{
+        const title = highlightText(r.title, keywords);
+        const authors = r.authors.slice(0, 3).join(', ') + (r.authors.length > 3 ? ' 他' : '');
+        const issue = r.year ? `${{r.year}}年 ${{r.volume}}巻${{r.number}}号` : '';
+        
+        html += `
+          <a href="${{r.link}}" target="_blank" class="result-item">
+            <div class="result-title">${{title}}</div>
+            <div class="result-meta">
+              <span class="result-journal">${{r.journal}}</span>
+              ${{authors}}${{issue ? ' / ' + issue : ''}}
+            </div>
+          </a>
+        `;
+      }}
+      
+      area.innerHTML = html;
+    }}
+  </script>
 </body>
 </html>'''
 
@@ -785,7 +1139,10 @@ def main():
     with open("journals.html", "w", encoding="utf-8") as f:
         f.write(generate_journals(data))
     
-    print("Generated: index.html, seido.html, articles.html, journals.html")
+    with open("search.html", "w", encoding="utf-8") as f:
+        f.write(generate_search(data))
+    
+    print("Generated: index.html, seido.html, articles.html, journals.html, search.html")
 
 if __name__ == "__main__":
     main()
