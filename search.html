@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>キーワード検索 - SANPO PORTAL</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #fafafa;
+      --text: #18181b;
+      --text-muted: #71717a;
+      --text-light: #a1a1aa;
+      --border: #e4e4e7;
+      --border-light: #f4f4f5;
+      --accent-1: #6366f1;
+      --accent-2: #8b5cf6;
+      --accent-3: #ec4899;
+    }
+    body { 
+      font-family: "Inter", "Noto Sans JP", -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    header {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-light);
+      z-index: 100;
+    }
+    .header-inner {
+      max-width: 1200px; margin: 0 auto;
+      padding: 18px 40px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .logo {
+      font-size: 1rem; font-weight: 600; letter-spacing: 0.02em;
+      color: var(--text); text-decoration: none;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon svg { width: 18px; height: 18px; color: white; }
+    nav { display: flex; gap: 36px; }
+    nav a {
+      font-size: 0.875rem; font-weight: 450; color: var(--text-muted);
+      text-decoration: none; transition: color 0.2s;
+    }
+    nav a:hover, nav a.active { color: var(--text); }
+    main { max-width: 1200px; margin: 0 auto; padding: 120px 40px 80px; }
+    @media (max-width: 768px) {
+      .header-inner { padding: 14px 20px; }
+      nav { gap: 20px; }
+      nav a { font-size: 0.8rem; }
+      main { padding: 100px 20px 60px; }
+    }
+
+    .page-header {
+      padding: 40px 0 40px;
+    }
+    .page-header h1 {
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .page-header p {
+      font-size: 1rem;
+      color: var(--text-muted);
+    }
+    .api-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      padding: 6px 12px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: var(--accent-1);
+      font-weight: 500;
+    }
+    .api-badge::before {
+      content: "●";
+      font-size: 8px;
+      color: #22c55e;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .search-box {
+      background: var(--bg-secondary);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+    .search-input-wrap {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .search-input {
+      flex: 1;
+      padding: 14px 20px;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    .search-input:focus {
+      border-color: var(--accent-1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+    .search-btn {
+      padding: 14px 28px;
+      background: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .search-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    .search-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .search-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px 24px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .search-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .search-option input[type="checkbox"],
+    .search-option input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-1);
+    }
+    .search-option label {
+      font-size: 0.9rem;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .year-filter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-light);
+    }
+    .year-filter label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .year-input {
+      width: 80px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      font-family: inherit;
+    }
+    .year-input:focus {
+      border-color: var(--accent-1);
+    }
+    .synonyms-info {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(99, 102, 241, 0.05);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--accent-1);
+      display: none;
+    }
+    .synonyms-info.show {
+      display: block;
+    }
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .results-count {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .results-count strong {
+      color: var(--accent-1);
+    }
+    .result-item {
+      display: block;
+      padding: 20px 24px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      text-decoration: none;
+      color: inherit;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    .result-item:hover {
+      background: white;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      transform: translateX(4px);
+    }
+    .result-title {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .result-item:hover .result-title {
+      color: var(--accent-1);
+    }
+    .result-title mark {
+      background: rgba(245, 158, 11, 0.3);
+      color: inherit;
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+    .result-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .result-journal {
+      display: inline-block;
+      padding: 4px 10px;
+      background: var(--border-light);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-right: 12px;
+    }
+    .no-results {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .no-results h3 {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .initial-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .initial-state svg {
+      width: 48px;
+      height: 48px;
+      color: var(--border);
+      margin-bottom: 16px;
+    }
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-light);
+      border-top-color: var(--accent-1);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .error-state {
+      text-align: center;
+      padding: 40px 20px;
+      background: #fef2f2;
+      border-radius: 12px;
+      color: #dc2626;
+    }
+    .error-state h3 {
+      margin-bottom: 8px;
+    }
+    .error-state p {
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
+    .retry-btn {
+      padding: 10px 20px;
+      background: #dc2626;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a href="index.html" class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+        </div>
+        SANPO PORTAL
+      </a>
+      <nav>
+        <a href="seido.html">制度改正</a>
+        <a href="articles.html">最新記事</a>
+        <a href="journals.html">雑誌一覧</a>
+        <a href="search.html" class="active">検索</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="page-header">
+      <h1>キーワード検索</h1>
+      <p>J-STAGE APIを使ってリアルタイムで論文を検索</p>
+      <div class="api-badge">J-STAGE API連携（Netlify Functions経由）</div>
+    </div>
+    
+    <div class="search-box">
+      <div class="search-input-wrap">
+        <input type="text" class="search-input" id="searchInput" placeholder="キーワードを入力（例: メンタルヘルス、ストレス、産業医）" />
+        <button class="search-btn" id="searchBtn" onclick="doSearch()">検索</button>
+      </div>
+      
+      <div class="search-options">
+        <span style="font-size: 0.85rem; color: var(--text-muted); margin-right: 8px;">検索対象誌:</span>
+        <div class="search-option">
+          <input type="checkbox" id="j1" value="sangyoeisei" checked />
+          <label for="j1">産業衛生学雑誌</label>
+        </div>
+        <div class="search-option">
+          <input type="checkbox" id="j2" value="indhealth" checked />
+          <label for="j2">Industrial Health</label>
+        </div>
+        <div class="search-option">
+          <input type="checkbox" id="j3" value="ohpfrev" checked />
+          <label for="j3">産業医学レビュー</label>
+        </div>
+        <div class="search-option">
+          <input type="checkbox" id="j4" value="jjomh" checked />
+          <label for="j4">産業精神保健</label>
+        </div>
+        <div class="search-option">
+          <input type="checkbox" id="j5" value="jaohn" checked />
+          <label for="j5">産業看護学会誌</label>
+        </div>
+        <div class="search-option">
+          <input type="checkbox" id="j6" value="jaohl" checked />
+          <label for="j6">産業保健法学会誌</label>
+        </div>
+      </div>
+      
+      <div class="year-filter">
+        <label>発行年:</label>
+        <input type="number" class="year-input" id="yearFrom" placeholder="1990" min="1900" max="2030" />
+        <span>〜</span>
+        <input type="number" class="year-input" id="yearTo" placeholder="2025" min="1900" max="2030" />
+      </div>
+    </div>
+    
+    <div id="resultsArea">
+      <div class="initial-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <p>キーワードを入力して検索してください<br><small style="color: var(--text-light);">※ J-STAGE APIからリアルタイムで論文を取得します（1990年〜最新）</small></p>
+      </div>
+    </div>
+  </main>
+  
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const resultsArea = document.getElementById('resultsArea');
+    
+    // Enterキーで検索
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') doSearch();
+    });
+    
+    // 選択された雑誌コードを取得
+    function getSelectedJournals() {
+      const checkboxes = document.querySelectorAll('.search-options input[type="checkbox"]:checked');
+      return Array.from(checkboxes).map(cb => cb.value);
+    }
+    
+    // ハイライト処理
+    function highlightText(text, keyword) {
+      if (!text || !keyword) return text || '';
+      const regex = new RegExp('(' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+      return text.replace(regex, '<mark>$1</mark>');
+    }
+    
+    // 検索実行
+    async function doSearch() {
+      const keyword = searchInput.value.trim();
+      if (!keyword) {
+        alert('キーワードを入力してください');
+        return;
+      }
+      
+      const journals = getSelectedJournals();
+      if (journals.length === 0) {
+        alert('少なくとも1つの雑誌を選択してください');
+        return;
+      }
+      
+      const yearFrom = document.getElementById('yearFrom').value;
+      const yearTo = document.getElementById('yearTo').value;
+      
+      // ローディング表示
+      resultsArea.innerHTML = `
+        <div class="loading">
+          <div class="loading-spinner"></div>
+          <p>J-STAGE APIから検索中...</p>
+        </div>
+      `;
+      searchBtn.disabled = true;
+      
+      try {
+        // Netlify Functionを呼び出し
+        const params = new URLSearchParams({
+          keyword: keyword,
+          journals: journals.join(',')
+        });
+        if (yearFrom) params.append('yearFrom', yearFrom);
+        if (yearTo) params.append('yearTo', yearTo);
+        
+        const response = await fetch(`/.netlify/functions/jstage-search?${params}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+          throw new Error(data.error || 'APIエラー');
+        }
+        
+        if (data.results.length === 0) {
+          resultsArea.innerHTML = `
+            <div class="no-results">
+              <h3>該当する論文が見つかりませんでした</h3>
+              <p>別のキーワードや条件をお試しください</p>
+            </div>
+          `;
+        } else {
+          renderResults(data.results, keyword);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        resultsArea.innerHTML = `
+          <div class="error-state">
+            <h3>検索中にエラーが発生しました</h3>
+            <p>${error.message}</p>
+            <button class="retry-btn" onclick="doSearch()">再試行</button>
+          </div>
+        `;
+      } finally {
+        searchBtn.disabled = false;
+      }
+    }
+    
+    // 結果表示
+    function renderResults(results, keyword) {
+      let html = `
+        <div class="results-header">
+          <span class="results-count">
+            <strong>${results.length}</strong> 件の論文が見つかりました
+            ${results.length >= 100 ? '<small style="color: var(--text-light);">（各誌上位100件を表示）</small>' : ''}
+          </span>
+        </div>
+      `;
+      
+      for (const r of results) {
+        const title = highlightText(r.title, keyword);
+        const authorsStr = r.authors && r.authors.length > 0 
+          ? r.authors.slice(0, 3).join(', ') + (r.authors.length > 3 ? ' 他' : '')
+          : '';
+        const issue = r.year ? `${r.year}年` + (r.volume ? ` ${r.volume}巻` : '') + (r.number ? `${r.number}号` : '') : '';
+        
+        html += `
+          <a href="${r.link}" target="_blank" class="result-item">
+            <div class="result-title">${title}</div>
+            <div class="result-meta">
+              <span class="result-journal">${r.journal}</span>
+              ${authorsStr}${issue ? ' / ' + issue : ''}
+            </div>
+          </a>
+        `;
+      }
+      
+      resultsArea.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
