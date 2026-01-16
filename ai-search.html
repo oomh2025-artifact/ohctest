@@ -398,16 +398,14 @@
         html += data.answer
           .replace(/\n\n/g, '</p><p>')
           .replace(/\n/g, '<br>')
-          .replace(/### (.*)/g, '<h3>$1</h3>')
-          .replace(/## (.*)/g, '<h3>$1</h3>')
+          .replace(/■(.*?)(<br>|<\/p>)/g, '<strong style="font-size:1.05em;display:block;margin-top:16px;margin-bottom:8px;">■$1</strong>$2')
           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-          .replace(/^\* (.*)/gm, '<li>$1</li>')
-          .replace(/^- (.*)/gm, '<li>$1</li>');
+          .replace(/^・/gm, '• ');
         html = '<p>' + html + '</p>';
       }
       
       if (data.sources && data.sources.length > 0) {
-        html += '<h3>📚 参照した論文</h3>';
+        html += '<strong style="font-size:1.05em;display:block;margin-top:16px;margin-bottom:8px;">📚 参照した論文</strong>';
         for (const src of data.sources) {
           html += `
             <a href="${src.link}" target="_blank" class="source-card">
