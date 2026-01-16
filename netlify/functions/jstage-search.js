@@ -50,6 +50,26 @@ function parseResults(xml) {
       }
     }
     
+    // 抄録（abstract）
+    let abstract = '';
+    const absMatch = entry.match(/<abstract>([\s\S]*?)<\/abstract>/);
+    if (absMatch) {
+      const absBlock = absMatch[1];
+      // 日本語優先
+      let absJa = absBlock.match(/<ja>[\s\S]*?CDATA\[([\s\S]*?)\]\]/);
+      if (absJa) {
+        abstract = absJa[1].trim();
+      } else {
+        // 英語フォールバック
+        let absEn = absBlock.match(/<en>[\s\S]*?CDATA\[([\s\S]*?)\]\]/);
+        if (absEn) abstract = absEn[1].trim();
+      }
+    }
+    // 150文字で切る
+    if (abstract.length > 150) {
+      abstract = abstract.substring(0, 150) + '...';
+    }
+    
     // 雑誌名
     let journal = '';
     const cdj = entry.match(/cdjournal>([^<]+)</);
@@ -74,6 +94,7 @@ function parseResults(xml) {
     results.push({
       title,
       authors: authors.slice(0, 5),
+      abstract,
       journal,
       volume: vol ? vol[1] : '',
       number: num ? num[1] : '',
