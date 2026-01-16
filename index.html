@@ -68,7 +68,7 @@
     }
 
     .hero {
-      padding: 60px 0 80px;
+      padding: 40px 0 60px;
       text-align: center;
     }
     .hero-badge {
@@ -82,7 +82,7 @@
       font-size: 0.75rem;
       font-weight: 500;
       color: var(--text-muted);
-      margin-bottom: 24px;
+      margin-bottom: 32px;
     }
     .hero-badge::before {
       content: '';
@@ -90,22 +90,82 @@
       background: var(--accent-1);
       border-radius: 50%;
     }
-    .hero h1 {
-      font-size: clamp(2rem, 4vw, 3.25rem);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      line-height: 1.2;
-      margin-bottom: 16px;
-    }
     .hero p {
-      font-size: 1.125rem;
+      font-size: 1rem;
       color: var(--text-muted);
       font-weight: 400;
+      margin-bottom: 8px;
+    }
+    
+    /* Search Box Styles */
+    .search-container {
+      max-width: 640px;
+      margin: 0 auto 48px;
+    }
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 18px 24px 18px 56px;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      background: var(--bg);
+      color: var(--text);
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    .search-box input::placeholder {
+      color: var(--text-light);
+    }
+    .search-box input:focus {
+      border-color: var(--accent-1);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+    .search-box .search-icon {
+      position: absolute;
+      left: 20px;
+      width: 22px;
+      height: 22px;
+      color: var(--text-light);
+      pointer-events: none;
+      transition: color 0.2s;
+    }
+    .search-box input:focus + .search-icon,
+    .search-box:hover .search-icon {
+      color: var(--accent-1);
+    }
+    .search-box button {
+      position: absolute;
+      right: 8px;
+      padding: 10px 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      font-family: inherit;
+      background: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .search-box button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    .search-hint {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--text-light);
     }
     
     .cards {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 16px;
       margin-bottom: 80px;
     }
@@ -134,7 +194,6 @@
     .card:nth-child(1) .card-icon { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; }
     .card:nth-child(2) .card-icon { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); color: white; }
     .card:nth-child(3) .card-icon { background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); color: white; }
-    .card:nth-child(4) .card-icon { background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%); color: white; }
     .card h2 {
       font-size: 1.125rem;
       font-weight: 600;
@@ -239,6 +298,8 @@
     
     @media (max-width: 768px) {
       .cards { grid-template-columns: 1fr; }
+      .search-box input { padding: 16px 20px 16px 48px; font-size: 0.9rem; }
+      .search-box button { padding: 8px 16px; font-size: 0.8rem; }
       .article-row { grid-template-columns: 1fr; gap: 8px; }
       .article-num { display: none; }
       .article-meta { justify-self: start; }
@@ -260,15 +321,24 @@
         <a href="seido.html">制度改正</a>
         <a href="articles.html">最新記事</a>
         <a href="journals.html">雑誌一覧</a>
-        <a href="search.html">検索</a>
       </nav>
     </div>
   </header>
   <main>
     <section class="hero">
       <div class="hero-badge">産業保健専門ポータル</div>
-      <h1>産業保健情報を、<br>ひとつの場所に。</h1>
       <p>法令・ガイドライン・学術情報を一元的に収集</p>
+      
+      <div class="search-container">
+        <form class="search-box" action="search.html" method="get">
+          <input type="text" name="q" placeholder="キーワードで論文を検索..." autocomplete="off">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <button type="submit">検索</button>
+        </form>
+        <p class="search-hint">類義語シソーラスで論文を横断検索</p>
+      </div>
     </section>
     
     <div class="cards">
@@ -298,16 +368,6 @@
         </div>
         <h2>雑誌一覧</h2>
         <p>J-STAGE無料閲覧<br>可能な学術誌</p>
-        <div class="card-arrow">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </div>
-      </a>
-      <a href="search.html" class="card">
-        <div class="card-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        </div>
-        <h2>キーワード検索</h2>
-        <p>類義語シソーラスで<br>論文を横断検索</p>
         <div class="card-arrow">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </div>
