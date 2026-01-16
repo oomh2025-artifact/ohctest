@@ -1,149 +1,121 @@
-// Netlify Function: J-STAGE API プロキシ
-// CORSの問題を回避するためのサーバーサイドプロキシ
+const https = require('https');
 
-exports.handler = async function(event, context) {
-  // CORSヘッダー
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Content-Type': 'application/json'
-  };
+// 対象の6誌のみに絞る
+const TARGET_JOURNALS = ['sangyoeisei', 'indhealth', 'ohpfrev', 'jjomh', 'jaohn', 'jaohl'];
 
-  // OPTIONSリクエスト（プリフライト）への対応
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-
-  try {
-    const params = event.queryStringParameters || {};
+function searchJstage(keyword) {
+  return new Promise((resolve, reject) => {
+    // 6誌に絞って検索
+    const journalParam = TARGET_JOURNALS.map(j => `cdjournal=${j}`).join('&');
+    const url = `https://api.jstage.jst.go.jp/searchapi/do?service=3&keyword=${encodeURIComponent(keyword)}&count=50&${journalParam}`;
     
-    // 必須パラメータのチェック
-    if (!params.keyword) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'keyword parameter is required' })
-      };
+    https.get(url, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve(data));
+    }).on('error', reject);
+  });
+}
+
+function parseResults(xml) {
+  const results = [];
+  const entries = xml.split('<entry>').slice(1);
+  
+  for (const entry of entries) {
+    // タイトル
+    let title = '';
+    let m = entry.match(/article_title[\s\S]*?<ja>[\s\S]*?CDATA\[([\s\S]*?)\]\]/);
+    if (m) title = m[1].trim();
+    if (!title) {
+      m = entry.match(/article_title[\s\S]*?<en>[\s\S]*?CDATA\[([\s\S]*?)\]\]/);
+      if (m) title = m[1].trim();
     }
-
-    const journals = params.journals ? params.journals.split(',') : [
-      'sangyoeisei', 'indhealth', 'ohpfrev', 'jjomh', 'jaohn', 'jaohl'
-    ];
-
-    const allResults = [];
-
-    // 各雑誌からデータを取得
-    for (const journal of journals) {
-      const searchParams = new URLSearchParams({
-        service: '3',
-        cdjournal: journal,
-        text: params.keyword,
-        count: '100'
-      });
-
-      if (params.yearFrom) searchParams.append('pubyearfrom', params.yearFrom);
-      if (params.yearTo) searchParams.append('pubyearto', params.yearTo);
-
-      const apiUrl = `https://api.jstage.jst.go.jp/searchapi/do?${searchParams}`;
-
-      try {
-        const response = await fetch(apiUrl);
-        const xmlText = await response.text();
-        
-        // XMLをパースして結果を抽出
-        const results = parseJstageXml(xmlText, journal);
-        allResults.push(...results);
-      } catch (err) {
-        console.error(`Error fetching ${journal}:`, err);
+    if (!title) {
+      m = entry.match(/<title>[\s\S]*?CDATA\[([\s\S]*?)\]\]/);
+      if (m && !m[1].startsWith('http')) title = m[1].trim();
+    }
+    
+    if (!title || title.length < 3) continue;
+    
+    // 著者
+    const authors = [];
+    const authorMatch = entry.match(/<author>([\s\S]*?)<\/author>/);
+    if (authorMatch) {
+      const block = authorMatch[1];
+      const jaBlock = block.match(/<ja>([\s\S]*?)<\/ja>/);
+      const names = (jaBlock ? jaBlock[1] : block).match(/CDATA\[([\s\S]*?)\]\]/g) || [];
+      for (const n of names) {
+        const name = n.replace(/CDATA\[|\]\]/g, '').trim();
+        if (name) authors.push(name);
       }
     }
+    
+    // 雑誌名
+    let journal = '';
+    const cdj = entry.match(/cdjournal>([^<]+)</);
+    if (cdj) {
+      const journalNames = {
+        'sangyoeisei': '産業衛生学雑誌',
+        'indhealth': 'Industrial Health',
+        'ohpfrev': '産業医学レビュー',
+        'jjomh': '産業精神保健',
+        'jaohn': '日本産業看護学会誌',
+        'jaohl': '産業保健法学会誌'
+      };
+      journal = journalNames[cdj[1]] || cdj[1];
+    }
+    
+    // 巻号年
+    const vol = entry.match(/volume>(\d+)</);
+    const num = entry.match(/number>([^<]+)</);
+    const year = entry.match(/pubyear>(\d+)</);
+    const link = entry.match(/link[^>]*href="([^"]+)"/);
+    
+    results.push({
+      title,
+      authors: authors.slice(0, 5),
+      journal,
+      volume: vol ? vol[1] : '',
+      number: num ? num[1] : '',
+      year: year ? year[1] : '',
+      link: link ? link[1] : ''
+    });
+  }
+  
+  return results;
+}
 
-    // 年度で降順ソート
-    allResults.sort((a, b) => (parseInt(b.year) || 0) - (parseInt(a.year) || 0));
-
+exports.handler = async function(event) {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'application/json; charset=utf-8'
+  };
+  
+  // クエリパラメータからキーワード取得
+  const keyword = event.queryStringParameters?.q;
+  
+  if (!keyword) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: 'キーワードを指定してください' })
+    };
+  }
+  
+  try {
+    const xml = await searchJstage(keyword);
+    const results = parseResults(xml);
+    
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({
-        success: true,
-        total: allResults.length,
-        results: allResults
-      })
+      body: JSON.stringify({ results, count: results.length })
     };
-
-  } catch (error) {
-    console.error('Function error:', error);
+  } catch (e) {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ error: e.message })
     };
   }
 };
-
-// XMLパース関数（シンプルな正規表現ベース）
-function parseJstageXml(xmlText, journalCode) {
-  const results = [];
-  
-  // エラーチェック
-  const statusMatch = xmlText.match(/<status>(\d+)<\/status>/);
-  if (statusMatch && statusMatch[1] !== '0') {
-    return results;
-  }
-
-  // entry要素を抽出
-  const entryRegex = /<entry>([\s\S]*?)<\/entry>/g;
-  let entryMatch;
-
-  while ((entryMatch = entryRegex.exec(xmlText)) !== null) {
-    const entry = entryMatch[1];
-
-    // タイトル（日本語優先）
-    const titleJaMatch = entry.match(/<article_title>[\s\S]*?<ja><!\[CDATA\[(.*?)\]\]><\/ja>/);
-    const titleEnMatch = entry.match(/<article_title>[\s\S]*?<en><!\[CDATA\[(.*?)\]\]><\/en>/);
-    const title = (titleJaMatch && titleJaMatch[1]) || (titleEnMatch && titleEnMatch[1]) || '';
-
-    // リンク
-    const linkJaMatch = entry.match(/<article_link>[\s\S]*?<ja>(.*?)<\/ja>/);
-    const linkEnMatch = entry.match(/<article_link>[\s\S]*?<en>(.*?)<\/en>/);
-    const link = (linkJaMatch && linkJaMatch[1]) || (linkEnMatch && linkEnMatch[1]) || '';
-
-    // 著者名
-    const authors = [];
-    const authorJaRegex = /<author>[\s\S]*?<ja>([\s\S]*?)<\/ja>/;
-    const authorJaMatch = entry.match(authorJaRegex);
-    if (authorJaMatch) {
-      const nameRegex = /<n><!\[CDATA\[(.*?)\]\]><\/n>/g;
-      let nameMatch;
-      while ((nameMatch = nameRegex.exec(authorJaMatch[1])) !== null) {
-        authors.push(nameMatch[1]);
-      }
-    }
-
-    // 雑誌名
-    const materialJaMatch = entry.match(/<material_title>[\s\S]*?<ja><!\[CDATA\[(.*?)\]\]><\/ja>/);
-    const materialEnMatch = entry.match(/<material_title>[\s\S]*?<en><!\[CDATA\[(.*?)\]\]><\/en>/);
-    const journal = (materialJaMatch && materialJaMatch[1]) || (materialEnMatch && materialEnMatch[1]) || '';
-
-    // 巻号・年
-    const volumeMatch = entry.match(/<prism:volume>(.*?)<\/prism:volume>/);
-    const numberMatch = entry.match(/<prism:number>(.*?)<\/prism:number>/);
-    const yearMatch = entry.match(/<pubyear>(.*?)<\/pubyear>/);
-
-    if (title) {
-      results.push({
-        title,
-        link,
-        authors,
-        journal,
-        journalCode,
-        volume: volumeMatch ? volumeMatch[1] : '',
-        number: numberMatch ? numberMatch[1] : '',
-        year: yearMatch ? yearMatch[1] : ''
-      });
-    }
-  }
-
-  return results;
-}
