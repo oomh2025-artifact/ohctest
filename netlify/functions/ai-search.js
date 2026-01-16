@@ -114,36 +114,29 @@ exports.handler = async function(event) {
         });
       }
       
-      // Web検索付きでClaude APIを呼び出し
+      // Web検索付きでClaude APIを呼び出し（厚労省1回のみ）
       const requestBody = JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 2500,
+        max_tokens: 2000,
         tools: [
           {
             type: 'web_search_20250305',
             name: 'web_search',
-            max_uses: 2
+            max_uses: 1
           }
         ],
         messages: [{
           role: 'user',
-          content: `あなたは産業保健の専門家です。
+          content: `産業保健の専門家として回答してください。
 
 【質問】${query}
 
 ${articlesContext}
 
 【指示】
-1. 厚生労働省等の公的機関をWeb検索して関連情報を調べてください
-2. 論文と公的資料を統合して、詳細な回答を作成（500-700字）
-3. 具体的な数値、法的根拠、実務手順を含めてください
-
-【出力形式】
-・見出しは「■タイトル」形式
-・太字は**このように**
-・箇条書きは「・」
-・参考URLは最後にまとめる
-・Markdown記法（###など）は使わない`
+1. 厚生労働省(mhlw.go.jp)で「${query.substring(0, 20)}」を検索して公的情報を確認
+2. 論文と公的資料を統合して回答（400-600字）
+3. 見出しは■、箇条書きは・、参考URLは最後に`
         }]
       });
       
